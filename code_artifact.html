@@ -15,7 +15,7 @@
             font-family: 'Noto Sans TC', sans-serif;
             background-color: #f3f4f6;
         }
-        /* 模式一：時間軸貫穿線 (DAY-1 到 DAY-4) */
+        /* 模式一：時間軸貫穿線 (DAY-1 到 DAY-5) */
         .timeline-container-overview::before {
             content: '';
             position: absolute;
@@ -134,15 +134,15 @@
             <!-- 切換檢視按鈕區 -->
             <div class="flex items-center justify-between mb-8">
                 <div class="flex gap-2 bg-white p-1.5 rounded-xl shadow-sm border border-gray-200">
-                    <button class="px-5 py-2 rounded-lg text-sm font-bold bg-gray-900 text-white shadow">完整行程</button>
-                    <button onclick="switchView('interactive')" class="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition">精簡行程</button>
+                    <button id="btn-mode-full" onclick="toggleOverviewMode('full')" class="px-5 py-2 rounded-lg text-sm font-bold bg-gray-900 text-white shadow transition">完整行程</button>
+                    <button id="btn-mode-compact" onclick="toggleOverviewMode('compact')" class="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition">精簡行程</button>
                 </div>
                 <button onclick="switchView('interactive')" class="text-sm font-bold text-gray-800 hover:text-[#F03742] transition flex items-center gap-1 bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-200">
                     看MAP動態行程 <i class="fa-solid fa-chevron-right text-xs"></i>
                 </button>
             </div>
 
-            <div class="timeline-container timeline-container-overview space-y-12 relative">
+            <div id="overview-timeline-container" class="timeline-container timeline-container-overview space-y-12 relative">
                 
                 <!-- DAY 1 -->
                 <div id="overview-day-1" class="overview-day-section flex gap-4 sm:gap-6 relative" data-day="1">
@@ -158,7 +158,9 @@
                                 <span class="text-gray-400 flex items-center gap-1.5">行程3 <i class="fa-solid fa-utensils text-xs"></i></span>
                                 <span class="text-gray-400 flex items-center gap-1.5">行程4</span>
                             </div>
-                            <div class="space-y-4 text-sm">
+                            
+                            <!-- 完整圖文內容 (可依切換開關隱藏/顯示) -->
+                            <div class="overview-full-content space-y-4 text-sm">
                                 <div>
                                     <h4 class="font-bold text-gray-900 mb-1">全程NO SHOPPING不進購物站，旅遊輕鬆又自在~</h4>
                                     <p class="text-gray-600 leading-relaxed mb-4">今日集合搭機飛往越南峴港，為越南的第三大城，更是越南歷史上重要的文化之都，更被美國國家地理雜誌評選為全球50個一生中必遊景點之一，在歐美人家眼中心名可媲美夏威夷海灘的度假勝地，其海天一色的沙灘亦不遜於馬爾地夫。</p>
@@ -218,6 +220,31 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- 純文字精簡行程內容 (純文字模式時顯示) -->
+                            <div class="overview-compact-content hidden space-y-3 text-sm">
+                                <h4 class="font-bold text-gray-900 text-base border-b pb-2 flex items-center justify-between">
+                                    <span>全程NO SHOPPING不進購物站，旅遊輕鬆又自在~</span>
+                                    <span class="text-xs font-normal text-gray-500">住宿：會安Emm Hotel Hoi An</span>
+                                </h4>
+                                <ul class="space-y-2 text-gray-700 list-disc list-inside pl-2">
+                                    <li class="hover:text-[#F03742] cursor-pointer transition" onclick="openSpotModal('景點名稱', '下車參觀', '今日集合搭機飛往越南峴港，為越南的第三大城，更是越南歷史上重要的文化之都。')">
+                                        <span class="font-semibold text-gray-900">景點1：</span>景點名稱 <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded ml-1">下車參觀</span>
+                                    </li>
+                                    <li class="hover:text-[#F03742] cursor-pointer transition" onclick="openSpotModal('景點名稱', '下車參觀', '今日集合搭機飛往越南峴港，為越南的第三大城，更是越南歷史上重要的文化之都。')">
+                                        <span class="font-semibold text-gray-900">景點2：</span>景點名稱 <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded ml-1">下車參觀</span>
+                                    </li>
+                                    <li class="hover:text-[#F03742] cursor-pointer transition" onclick="openSpotModal('景點名稱', '下車參觀', '今日集合搭機飛往越南峴港，為越南的第三大城，更是越南歷史上重要的文化之都。')">
+                                        <span class="font-semibold text-gray-900">景點3：</span>景點名稱 <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded ml-1">下車參觀</span>
+                                    </li>
+                                </ul>
+                                <div class="text-xs text-gray-500 bg-gray-50 p-2.5 rounded-lg border border-gray-100 flex flex-wrap gap-4 pt-2">
+                                    <span>早餐：溫暖的家</span>
+                                    <span>午餐：機上享用或越南特色風味料理</span>
+                                    <span>晚餐：越式風味餐</span>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -235,7 +262,8 @@
                                 <span class="text-gray-400 flex items-center gap-1.5">行程3 <i class="fa-solid fa-utensils text-xs"></i></span>
                                 <span class="text-gray-400 flex items-center gap-1.5">行程4</span>
                             </div>
-                            <div class="space-y-4 text-sm">
+                            
+                            <div class="overview-full-content space-y-4 text-sm">
                                 <div>
                                     <h4 class="font-bold text-gray-900 mb-1">巴拿山黃金橋天空之城一日遊</h4>
                                     <p class="text-gray-600 leading-relaxed mb-4">搭乘世界最長單纜高空纜車前往巴拿山，漫步於著名的巨手黃金橋，俯瞰雲海與峴港市景。</p>
@@ -279,6 +307,30 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="overview-compact-content hidden space-y-3 text-sm">
+                                <h4 class="font-bold text-gray-900 text-base border-b pb-2 flex items-center justify-between">
+                                    <span>巴拿山黃金橋天空之城一日遊</span>
+                                    <span class="text-xs font-normal text-gray-500">住宿：會安Emm Hotel Hoi An</span>
+                                </h4>
+                                <ul class="space-y-2 text-gray-700 list-disc list-inside pl-2">
+                                    <li class="hover:text-[#F03742] cursor-pointer transition" onclick="openSpotModal('巴拿山黃金橋', '入內參觀', '被選為世界新七大奇蹟之一的巨大手掌造型橋樑。')">
+                                        <span class="font-semibold text-gray-900">景點1：</span>巴拿山黃金橋 <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded ml-1">入內參觀</span>
+                                    </li>
+                                    <li class="hover:text-[#F03742] cursor-pointer transition" onclick="openSpotModal('法國村建築群', '下車參觀', '重現19世紀法國古典小鎮的建築風格。')">
+                                        <span class="font-semibold text-gray-900">景點2：</span>法國村建築群 <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded ml-1">下車參觀</span>
+                                    </li>
+                                    <li class="hover:text-[#F03742] cursor-pointer transition" onclick="openSpotModal('夢幻樂園 Fantasy Park', '特別安排', '越南最大室內遊樂園，擁有豐富的遊樂設施。')">
+                                        <span class="font-semibold text-gray-900">景點3：</span>夢幻樂園 Fantasy Park <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded ml-1">特別安排</span>
+                                    </li>
+                                </ul>
+                                <div class="text-xs text-gray-500 bg-gray-50 p-2.5 rounded-lg border border-gray-100 flex flex-wrap gap-4 pt-2">
+                                    <span>早餐：飯店早餐</span>
+                                    <span>午餐：巴拿山自助餐</span>
+                                    <span>晚餐：海鮮特色餐</span>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -296,7 +348,8 @@
                                 <span class="text-gray-400 flex items-center gap-1.5">行程3 <i class="fa-solid fa-utensils text-xs"></i></span>
                                 <span class="text-gray-400 flex items-center gap-1.5">行程4</span>
                             </div>
-                            <div class="space-y-4 text-sm">
+                            
+                            <div class="overview-full-content space-y-4 text-sm">
                                 <div>
                                     <h4 class="font-bold text-gray-900 mb-1">會安古鎮漫遊與迦南島竹籃船</h4>
                                     <p class="text-gray-600 leading-relaxed mb-4">穿梭於被列為世界文化遺產的會安古鎮燈籠街，體驗特色竹籃船與夜訪秋盆河水燈祈福。</p>
@@ -340,6 +393,30 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="overview-compact-content hidden space-y-3 text-sm">
+                                <h4 class="font-bold text-gray-900 text-base border-b pb-2 flex items-center justify-between">
+                                    <span>會安古鎮漫遊與迦南島竹籃船</span>
+                                    <span class="text-xs font-normal text-gray-500">住宿：會安高級度假飯店</span>
+                                </h4>
+                                <ul class="space-y-2 text-gray-700 list-disc list-inside pl-2">
+                                    <li class="hover:text-[#F03742] cursor-pointer transition" onclick="openSpotModal('迦南島椰林竹籃船', '體驗活動', '搭乘越南特色碗公船穿梭於水椰林間。')">
+                                        <span class="font-semibold text-gray-900">景點1：</span>迦南島椰林竹籃船 <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded ml-1">體驗活動</span>
+                                    </li>
+                                    <li class="hover:text-[#F03742] cursor-pointer transition" onclick="openSpotModal('會安古城與日本橋', '下車參觀', '漫步於融合中國、日本與歐洲風格的百年古老建築群。')">
+                                        <span class="font-semibold text-gray-900">景點2：</span>會安古城與日本橋 <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded ml-1">下車參觀</span>
+                                    </li>
+                                    <li class="hover:text-[#F03742] cursor-pointer transition" onclick="openSpotModal('秋盆河水燈祈福', '特別安排', '夜晚搭乘小舟遊覽秋盆河施放花燈。')">
+                                        <span class="font-semibold text-gray-900">景點3：</span>秋盆河水燈祈福 <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded ml-1">特別安排</span>
+                                    </li>
+                                </ul>
+                                <div class="text-xs text-gray-500 bg-gray-50 p-2.5 rounded-lg border border-gray-100 flex flex-wrap gap-4 pt-2">
+                                    <span>早餐：飯店早餐</span>
+                                    <span>午餐：迦南島螃蟹火鍋熱帶風味餐</span>
+                                    <span>晚餐：會安特色高樓麵風味</span>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -357,7 +434,8 @@
                                 <span class="text-gray-400 flex items-center gap-1.5">行程3 <i class="fa-solid fa-utensils text-xs"></i></span>
                                 <span class="text-gray-400 flex items-center gap-1.5">行程4</span>
                             </div>
-                            <div class="space-y-4 text-sm">
+                            
+                            <div class="overview-full-content space-y-4 text-sm">
                                 <div>
                                     <h4 class="font-bold text-gray-900 mb-1">順化歷史古都文化深度之旅</h4>
                                     <p class="text-gray-600 leading-relaxed mb-4">參觀聯合國教科文組織世界遺產「順化皇城」，造訪古色古香的皇家宮殿與陵墓。</p>
@@ -401,6 +479,30 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="overview-compact-content hidden space-y-3 text-sm">
+                                <h4 class="font-bold text-gray-900 text-base border-b pb-2 flex items-center justify-between">
+                                    <span>順化歷史古都文化深度之旅</span>
+                                    <span class="text-xs font-normal text-gray-500">住宿：順化帝國飯店</span>
+                                </h4>
+                                <ul class="space-y-2 text-gray-700 list-disc list-inside pl-2">
+                                    <li class="hover:text-[#F03742] cursor-pointer transition" onclick="openSpotModal('順化皇城（大內宿）', '入內參觀', '阮朝時期的皇家宮殿，仿造北京紫禁城建造。')">
+                                        <span class="font-semibold text-gray-900">景點1：</span>順化皇城（大內宿） <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded ml-1">入內參觀</span>
+                                    </li>
+                                    <li class="hover:text-[#F03742] cursor-pointer transition" onclick="openSpotModal('天姥寺', '下車參觀', '聳立於香江之畔的七層八角磚塔。')">
+                                        <span class="font-semibold text-gray-900">景點2：</span>天姥寺 <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded ml-1">下車參觀</span>
+                                    </li>
+                                    <li class="hover:text-[#F03742] cursor-pointer transition" onclick="openSpotModal('啟定皇陵', '入內參觀', '結合東西方建築風格的華麗皇陵。')">
+                                        <span class="font-semibold text-gray-900">景點3：</span>啟定皇陵 <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded ml-1">入內參觀</span>
+                                    </li>
+                                </ul>
+                                <div class="text-xs text-gray-500 bg-gray-50 p-2.5 rounded-lg border border-gray-100 flex flex-wrap gap-4 pt-2">
+                                    <span>早餐：飯店早餐</span>
+                                    <span>午餐：順化宮廷宴風味</span>
+                                    <span>晚餐：香江景觀餐廳</span>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -418,7 +520,8 @@
                                 <span class="text-gray-400 flex items-center gap-1.5">行程3 <i class="fa-solid fa-utensils text-xs"></i></span>
                                 <span class="text-gray-400 flex items-center gap-1.5">行程4</span>
                             </div>
-                            <div class="space-y-4 text-sm">
+                            
+                            <div class="overview-full-content space-y-4 text-sm">
                                 <div>
                                     <h4 class="font-bold text-gray-900 mb-1">峴港特產巡禮與賦歸溫馨的家</h4>
                                     <p class="text-gray-600 leading-relaxed mb-4">享用豐富早餐後前往當地市集與特產店採買伴手禮，隨後前往機場搭機返回溫暖的家。</p>
@@ -462,6 +565,30 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="overview-compact-content hidden space-y-3 text-sm">
+                                <h4 class="font-bold text-gray-900 text-base border-b pb-2 flex items-center justify-between">
+                                    <span>峴港特產巡禮與賦歸溫馨的家</span>
+                                    <span class="text-xs font-normal text-gray-500">住宿：溫馨的家</span>
+                                </h4>
+                                <ul class="space-y-2 text-gray-700 list-disc list-inside pl-2">
+                                    <li class="hover:text-[#F03742] cursor-pointer transition" onclick="openSpotModal('韓市場 Han Market', '自由採購', '峴港最具代表性的傳統室內市場。')">
+                                        <span class="font-semibold text-gray-900">景點1：</span>韓市場 Han Market <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded ml-1">自由採購</span>
+                                    </li>
+                                    <li class="hover:text-[#F03742] cursor-pointer transition" onclick="openSpotModal('峴港粉紅大教堂', '下車參觀', '法國殖民時期建立的哥德式粉紅色教堂。')">
+                                        <span class="font-semibold text-gray-900">景點2：</span>峴港粉紅大教堂 <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded ml-1">下車參觀</span>
+                                    </li>
+                                    <li class="hover:text-[#F03742] cursor-pointer transition" onclick="openSpotModal('峴港國際機場', '返程搭機', '整理行裝辦理登機手續搭機飛返溫暖的家。')">
+                                        <span class="font-semibold text-gray-900">景點3：</span>峴港國際機場 <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded ml-1">返程搭機</span>
+                                    </li>
+                                </ul>
+                                <div class="text-xs text-gray-500 bg-gray-50 p-2.5 rounded-lg border border-gray-100 flex flex-wrap gap-4 pt-2">
+                                    <span>早餐：飯店早餐</span>
+                                    <span>午餐：廣南特色河粉料理</span>
+                                    <span>晚餐：機上輕食</span>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -630,6 +757,26 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+        /* 模式一：切換「完整行程」與「純文字精簡行程」 */
+        function toggleOverviewMode(mode) {
+            const fullContents = document.querySelectorAll('.overview-full-content');
+            const compactContents = document.querySelectorAll('.overview-compact-content');
+            const btnFull = document.getElementById('btn-mode-full');
+            const btnCompact = document.getElementById('btn-mode-compact');
+
+            if (mode === 'compact') {
+                fullContents.forEach(el => el.classList.add('hidden'));
+                compactContents.forEach(el => el.classList.remove('hidden'));
+                btnCompact.className = "px-5 py-2 rounded-lg text-sm font-bold bg-gray-900 text-white shadow transition";
+                btnFull.className = "px-5 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition";
+            } else {
+                fullContents.forEach(el => el.classList.remove('hidden'));
+                compactContents.forEach(el => el.classList.add('hidden'));
+                btnFull.className = "px-5 py-2 rounded-lg text-sm font-bold bg-gray-900 text-white shadow transition";
+                btnCompact.className = "px-5 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition";
+            }
+        }
+
         function selectDay(dayNum) {
             currentActiveDay = dayNum;
             for (let i = 1; i <= 5; i++) {
@@ -788,3 +935,4 @@
         };
     </script>
 </body>
+</html>
