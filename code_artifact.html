@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>旅遊行程互動導覽系統</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f3f4f6;
+        }
+        /* 模式一：時間軸貫穿線 (DAY-1 到 DAY-4) */
+        .timeline-container-overview::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            bottom: 40px;
+            left: 19px;
+            width: 2px;
+            background-color: #cbd5e1;
+            z-index: 0;
+        }
+        /* 模式二：景點節點貫穿線 */
+        .timeline-line::before {
+            content: '';
+            position: absolute;
+            top: 12px;
+            bottom: 30px;
+            left: 11px;
+            width: 2px;
+            background-color: #cbd5e1;
+            z-index: 0;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        @keyframes bounceCard {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.06); background-color: #fef2f2; border-color: #fca5a5; }
+            100% { transform: scale(1); }
+        }
+        .map-card-bounce {
+            animation: bounceCard 0.35s ease-in-out;
+        }
+    </style>
+</head>
+<body class="text-gray-800 antialiased min-h-screen flex flex-col">
+
+    <!-- 全頁光箱 (Full-screen Lightbox) -->
+    <div id="spot-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4 sm:p-6 transition-opacity duration-300">
+        <!-- 半透明背景遮罩 -->
+        <div id="modal-backdrop" onclick="closeSpotModal()" class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
+        
+        <!-- 光箱內容卡片 -->
+        <div class="relative bg-white rounded-3xl shadow-2xl overflow-hidden max-w-2xl w-full z-10 border border-gray-100 transform transition-all duration-300 scale-95 opacity-0" id="modal-card">
+            <!-- 關閉按鈕 -->
+            <button onclick="closeSpotModal()" class="absolute top-4 right-4 z-20 w-10 h-10 bg-black/50 hover:bg-black/80 text-white rounded-full flex items-center justify-center transition focus:outline-none">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            
+            <!-- 光箱景點圖片區 (灰色底色) -->
+            <div class="w-full h-64 sm:h-80 bg-gray-200 flex flex-col items-center justify-center text-gray-400 font-bold relative border-b border-gray-300">
+                <i class="fa-regular fa-image text-4xl mb-2"></i>
+                <span class="text-sm tracking-wider">景點圖片</span>
+            </div>
+            
+            <!-- 光箱詳細說明區 -->
+            <div class="p-6 sm:p-8 space-y-4">
+                <div class="flex items-center gap-3">
+                    <h3 id="modal-title" class="text-2xl font-bold text-gray-900">景點名稱</h3>
+                    <span id="modal-tag" class="text-xs bg-gray-200 text-gray-700 font-semibold px-2.5 py-1 rounded-md">下車參觀</span>
+                </div>
+                <p id="modal-desc" class="text-sm sm:text-base text-gray-600 leading-relaxed">
+                    景點詳細內容說明...
+                </p>
+                <div class="pt-4 border-t border-gray-100 flex justify-between items-center text-xs text-gray-400">
+                    <span><i class="fa-solid fa-location-dot mr-1 text-[#F03742]"></i>越南行程熱門景點</span>
+                    <button onclick="closeSpotModal()" class="px-5 py-2 bg-gray-900 hover:bg-[#F03742] text-white font-medium rounded-xl transition">關閉預覽</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <header class="bg-gray-900 text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div class="flex items-center gap-3">
+                <h1 id="header-title" class="text-sm sm:text-base font-semibold tracking-wider text-orange-300">
+                    清單式時間軸：專注於「國文閱讀、預覽、傳統列印」。寬度：1200px (標準WEB版寬)
+                </h1>
+            </div>
+            
+            <!-- 視圖切換按鈕 -->
+            <div class="flex bg-gray-800 p-1 rounded-xl border border-gray-700">
+                <button id="btn-overview" onclick="switchView('overview')" class="px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition bg-[#F03742] text-white shadow">
+                    完整行程 (1200px)
+                </button>
+                <button id="btn-interactive" onclick="switchView('interactive')" class="px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition text-gray-300 hover:text-white">
+                    動態地圖導覽 (100% 滿版)
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow flex flex-col w-full">
+
+        <!-- ==================== 模式一：1200px 標準版寬 (對應第2張圖) ==================== -->
+        <div id="view-overview" class="w-full max-w-[1200px] mx-auto px-4 py-6 flex-grow flex flex-col">
+            
+            <!-- 上方動態地圖（依天數移動） -->
+            <div class="bg-gray-200 rounded-2xl w-full h-56 sm:h-72 mb-6 shadow-inner flex flex-col items-center justify-center relative overflow-hidden border border-gray-300 sticky top-[75px] z-30 transition-all duration-300">
+                <div class="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 opacity-90"></div>
+                <div class="absolute inset-0 grid grid-cols-6 grid-rows-4 opacity-15 pointer-events-none">
+                    <div class="border-b border-r border-gray-900"></div><div class="border-b border-r border-gray-900"></div><div class="border-b border-r border-gray-900"></div><div class="border-b border-r border-gray-900"></div><div class="border-b border-r border-gray-900"></div><div class="border-b border-gray-900"></div>
+                    <div class="border-b border-r border-gray-900"></div><div class="border-b border-r border-gray-900"></div><div class="border-b border-r border-gray-900"></div><div class="border-b border-r border-gray-900"></div><div class="border-b border-r border-gray-900"></div><div class="border-b border-gray-900"></div>
+                    <div class="border-b border-r border-gray-900"></div><div class="border-b border-r border-gray-900"></div><div class="border-b border-r border-gray-900"></div><div class="border-b border-r border-gray-900"></div><div class="border-b border-r border-gray-900"></div><div class="border-b border-gray-900"></div>
+                    <div class="border-r border-gray-900"></div><div class="border-r border-gray-900"></div><div class="border-r border-gray-900"></div><div class="border-r border-gray-900"></div><div class="border-r border-gray-900"></div><div></div>
+                </div>
+                <div id="overview-map-card" class="relative z-10 text-center bg-white/90 backdrop-blur-sm px-6 py-3 rounded-2xl shadow-md border border-white transition-all duration-300">
+                    <div class="text-xl font-bold tracking-widest text-gray-700 mb-0.5">MAP</div>
+                    <div id="overview-map-label" class="text-sm font-bold text-[#F03742]">依天數移動：DAY-1 行程總覽</div>
+                </div>
+            </div>
+
+            <!-- 切換檢視按鈕區 -->
+            <div class="flex items-center justify-between mb-8">
+                <div class="flex gap-2 bg-white p-1.5 rounded-xl shadow-sm border border-gray-200">
+                    <button class="px-5 py-2 rounded-lg text-sm font-bold bg-gray-900 text-white shadow">完整行程</button>
+                    <button onclick="switchView('interactive')" class="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition">精簡行程</button>
+                </div>
+                <button onclick="switchView('interactive')" class="text-sm font-bold text-gray-800 hover:text-[#F03742] transition flex items-center gap-1 bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-200">
+                    看MAP動態行程 <i class="fa-solid fa-chevron-right text-xs"></i>
+                </button>
+            </div>
+
+            <div class="timeline-container timeline-container-overview space-y-12 relative">
+                
+                <!-- DAY 1 -->
+                <div id="overview-day-1" class="overview-day-section flex gap-4 sm:gap-6 relative" data-day="1">
+                    <div class="flex flex-col items-center">
+                        <div class="w-10 h-10 rounded-full bg-gray-900 text-white font-bold text-xs flex items-center justify-center shadow-md z-10 shrink-0">DAY-1</div>
+                    </div>
+                    <div class="flex-grow pb-2">
+                        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+                            <!-- 靜態標籤列 -->
+                            <div class="flex flex-wrap items-center gap-5 pb-4 mb-4 border-b border-gray-100 text-sm font-semibold select-none">
+                                <span class="text-gray-900 border-b-2 border-gray-900 pb-1 flex items-center gap-1.5">行程1 <i class="fa-solid fa-plane text-xs"></i></span>
+                                <span class="text-gray-400 flex items-center gap-1.5">行程2 <i class="fa-solid fa-hotel text-xs"></i></span>
+                                <span class="text-gray-400 flex items-center gap-1.5">行程3 <i class="fa-solid fa-utensils text-xs"></i></span>
+                                <span class="text-gray-400 flex items-center gap-1.5">行程4</span>
+                            </div>
+                            <div class="space-y-4 text-sm">
+                                <div>
+                                    <h4 class="font-bold text-gray-900 mb-1">全程NO SHOPPING不進購物站，旅遊輕鬆又自在~</h4>
+                                    <p class="text-gray-600 leading-relaxed mb-4">今日集合搭機飛往越南峴港，為越南的第三大城，更是越南歷史上重要的文化之都，更被美國國家地理雜誌評選為全球50個一生中必遊景點之一，在歐美人家眼中心名可媲美夏威夷海灘的度假勝地，其海天一色的沙灘亦不遜於馬爾地夫。</p>
+                                    <p class="text-gray-600 leading-relaxed mb-4">全程NO SHOPPING不進購物站，旅遊輕鬆又自在~</p>
+                                    <p class="text-gray-600 leading-relaxed mb-4">今日集合搭機飛往越南峴港，為越南的第三大城，更是越南歷史上重要的文化之都，更被美國國家地理雜誌評選為全球50個一生中必遊景點之一，在歐美人家眼中心名可媲美夏威夷海灘的度假勝地，其海天一色的沙灘亦不遜於馬爾地夫。</p>
+                                    
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50/80 p-3 rounded-xl border border-gray-200/60 mb-4 text-xs">
+                                        <div>
+                                            <span class="font-bold text-gray-700 block">早餐：溫暖的家</span>
+                                            <span class="font-bold text-gray-700 block">早餐：溫暖的家</span>
+                                            <span class="font-bold text-gray-700 block">早餐：溫暖的家</span>
+                                        </div>
+                                        <div>
+                                            <span class="font-bold text-gray-700 block">旅館</span>
+                                            <span class="text-gray-600 block">會安Emm Hotel Hoi An Ally Beach Boutique Hotel HoiA會安</span>
+                                            <span class="text-gray-600 block">Emm Hotel Hoi An Ally Beach Boutique Hotel Hoiaotel Hoi An...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="space-y-3 pt-2">
+                                    <div onclick="openSpotModal('景點名稱', '下車參觀', '今日集合搭機飛往越南峴港，為越南的第三大城，更是越南歷史上重要的文化之都，更被美國國家地理雜誌評選為全球50個一生中必遊景點之一，在歐美人家眼中心名可媲美夏威夷海灘的度假勝地，其海天一色的沙灘亦不遜於馬爾地夫。')" class="bg-gray-50/80 rounded-xl p-4 border border-gray-200/60 flex flex-col sm:flex-row gap-4 items-center hover:-translate-y-1 hover:shadow-lg hover:border-[#F03742] transition-all duration-300 cursor-pointer group">
+                                        <div class="w-full sm:w-48 h-28 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 font-medium text-xs shrink-0 overflow-hidden">
+                                            <span class="group-hover:scale-110 transition-transform duration-300">景點圖片</span>
+                                        </div>
+                                        <div class="flex-grow">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <h5 class="font-bold text-gray-900 text-sm group-hover:text-[#F03742] transition-colors">景點名稱</h5>
+                                                <span class="text-[10px] bg-gray-200 text-gray-700 px-2 py-0.5 rounded">下車參觀</span>
+                                            </div>
+                                            <p class="text-xs text-gray-600 line-clamp-2">今日集合搭機飛往越南峴港，為越南的第三大城，更是越南歷史上重要的文化之都，更被美國國家地理雜誌評選為全球50個一生中必遊景點之一。</p>
+                                        </div>
+                                    </div>
+                                    <div onclick="openSpotModal('景點名稱', '下車參觀', '今日集合搭機飛往越南峴港，為越南的第三大城，更是越南歷史上重要的文化之都，更被美國國家地理雜誌評選為全球50個一生中必遊景點之一，在歐美人家眼中心名可媲美夏威夷海灘的度假勝地，其海天一色的沙灘亦不遜於馬爾地夫。')" class="bg-gray-50/80 rounded-xl p-4 border border-gray-200/60 flex flex-col sm:flex-row gap-4 items-center hover:-translate-y-1 hover:shadow-lg hover:border-[#F03742] transition-all duration-300 cursor-pointer group">
+                                        <div class="w-full sm:w-48 h-28 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 font-medium text-xs shrink-0 overflow-hidden">
+                                            <span class="group-hover:scale-110 transition-transform duration-300">景點圖片</span>
+                                        </div>
+                                        <div class="flex-grow">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <h5 class="font-bold text-gray-900 text-sm group-hover:text-[#F03742] transition-colors">景點名稱</h5>
+                                                <span class="text-[10px] bg-gray-200 text-gray-700 px-2 py-0.5 rounded">下車參觀</span>
+                                            </div>
+                                            <p class="text-xs text-gray-600 line-clamp-2">今日集合搭機飛往越南峴港，為越南的第三大城，更是越南歷史上重要的文化之都，更被美國國家地理雜誌評選為全球50個一生中必遊景點之一。</p>
+                                        </div>
+                                    </div>
+                                    <div onclick="openSpotModal('景點名稱', '下車參觀', '今日集合搭機飛往越南峴港，為越南的第三大城，更是越南歷史上重要的文化之都，更被美國國家地理雜誌評選為全球50個一生中必遊景點之一，在歐美人家眼中心名可媲美夏威夷海灘的度假勝地，其海天一色的沙灘亦不遜於馬爾地夫。')" class="bg-gray-50/80 rounded-xl p-4 border border-gray-200/60 flex flex-col sm:flex-row gap-4 items-center hover:-translate-y-1 hover:shadow-lg hover:border-[#F03742] transition-all duration-300 cursor-pointer group">
+                                        <div class="w-full sm:w-48 h-28 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 font-medium text-xs shrink-0 overflow-hidden">
+                                            <span class="group-hover:scale-110 transition-transform duration-300">景點圖片</span>
+                                        </div>
+                                        <div class="flex-grow">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <h5 class="font-bold text-gray-900 text-sm group-hover:text-[#F03742] transition-colors">景點名稱</h5>
+                                                <span class="text-[10px] bg-gray-200 text-gray-700 px-2 py-0.5 rounded">下車參觀</span>
+                                            </div>
+                                            <p class="text-xs text-gray-600 line-clamp-2">今日集合搭機飛往越南峴港，為越南的第三大城，更是越南歷史上重要的文化之都，更被美國國家地理雜誌評選為全球50個一生中必遊景點之一。</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DAY 2 -->
+                <div id="overview-day-2" class="overview-day-section flex gap-4 sm:gap-6 relative" data-day="2">
+                    <div class="flex flex-col items-center">
+                        <div class="w-10 h-10 rounded-full bg-gray-900 text-white font-bold text-xs flex items-center justify-center shadow-md z-10 shrink-0">DAY-2</div>
+                    </div>
+                    <div class="flex-grow pb-2">
+                        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+                            <div class="flex flex-wrap items-center gap-5 pb-4 mb-4 border-b border-gray-100 text-sm font-semibold select-none">
+                                <span class="text-gray-900 border-b-2 border-gray-900 pb-1 flex items-center gap-1.5">行程1 <i class="fa-solid fa-plane text-xs"></i></span>
+                                <span class="text-gray-400 flex items-center gap-1.5">行程2 <i class="fa-solid fa-hotel text-xs"></i></span>
+                                <span class="text-gray-400 flex items-center gap-1.5">行程3 <i class="fa-solid fa-utensils text-xs"></i></span>
+                                <span class="text-gray-400 flex items-center gap-1.5">行程4</span>
+                            </div>
+                            <div class="space-y-4 text-sm">
+                                <div>
+                                    <h4 class="font-bold text-gray-900 mb-1">巴拿山黃金橋天空之城一日遊</h4>
+                                    <p class="text-gray-600 leading-relaxed mb-4">搭乘世界最長單纜高空纜車前往巴拿山，漫步於著名的巨手黃金橋，俯瞰雲海與峴港市景。</p>
+                                </div>
+                                <div class="space-y-3 pt-2">
+                                    <div onclick="openSpotModal('巴拿山黃金橋', '入內參觀', '被選為世界新七大奇蹟之一的巨大手掌造型橋樑，置身於雲霧繚繞的避暑勝地。')" class="bg-gray-50/80 rounded-xl p-4 border border-gray-200/60 flex flex-col sm:flex-row gap-4 items-center hover:-translate-y-1 hover:shadow-lg hover:border-[#F03742] transition-all duration-300 cursor-pointer group">
+                                        <div class="w-full sm:w-48 h-28 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 font-medium text-xs shrink-0 overflow-hidden">
+                                            <span class="group-hover:scale-110 transition-transform duration-300">景點圖片</span>
+                                        </div>
+                                        <div class="flex-grow">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <h5 class="font-bold text-gray-900 text-sm group-hover:text-[#F03742] transition-colors">巴拿山黃金橋</h5>
+                                                <span class="text-[10px] bg-gray-200 text-gray-700 px-2 py-0.5 rounded">入內參觀</span>
+                                            </div>
+                                            <p class="text-xs text-gray-600 line-clamp-2">被選為世界新七大奇蹟之一的巨大手掌造型橋樑，置身於雲霧繚繞的避暑勝地。</p>
+                                        </div>
+                                    </div>
+                                    <div onclick="openSpotModal('法國村建築群', '下車參觀', '重現19世紀法國古典小鎮的建築風格，彷彿置身於歐陸浪漫小鎮之中。')" class="bg-gray-50/80 rounded-xl p-4 border border-gray-200/60 flex flex-col sm:flex-row gap-4 items-center hover:-translate-y-1 hover:shadow-lg hover:border-[#F03742] transition-all duration-300 cursor-pointer group">
+                                        <div class="w-full sm:w-48 h-28 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 font-medium text-xs shrink-0 overflow-hidden">
+                                            <span class="group-hover:scale-110 transition-transform duration-300">景點圖片</span>
+                                        </div>
+                                        <div class="flex-grow">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <h5 class="font-bold text-gray-900 text-sm group-hover:text-[#F03742] transition-colors">法國村建築群</h5>
+                                                <span class="text-[10px] bg-gray-200 text-gray-700 px-2 py-0.5 rounded">下車參觀</span>
+                                            </div>
+                                            <p class="text-xs text-gray-600 line-clamp-2">重現19世紀法國古典小鎮的建築風格，彷彿置身於歐陸浪漫小鎮之中。</p>
+                                        </div>
+                                    </div>
+                                    <div onclick="openSpotModal('夢幻樂園 Fantasy Park', '特別安排', '越南最大室內遊樂園，擁有豐富的遊樂設施與冒險體驗活動。')" class="bg-gray-50/80 rounded-xl p-4 border border-gray-200/60 flex flex-col sm:flex-row gap-4 items-center hover:-translate-y-1 hover:shadow-lg hover:border-[#F03742] transition-all duration-300 cursor-pointer group">
+                                        <div class="w-full sm:w-48 h-28 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 font-medium text-xs shrink-0 overflow-hidden">
+                                            <span class="group-hover:scale-110 transition-transform duration-300">景點圖片</span>
+                                        </div>
+                                        <div class="flex-grow">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <h5 class="font-bold text-gray-900 text-sm group-hover:text-[#F03742] transition-colors">夢幻樂園 Fantasy Park</h5>
+                                                <span class="text-[10px] bg-gray-200 text-gray-700 px-2 py-0.5 rounded">特別安排</span>
+                                            </div>
+                                            <p class="text-xs text-gray-600 line-clamp-2">越南最大室內遊樂園，擁有豐富的遊樂設施與冒險體驗活動。</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DAY 3 -->
+                <div id="overview-day-3" class="overview-day-section flex gap-4 sm:gap-6 relative" data-day="3">
+                    <div class="flex flex-col items-center">
+                        <div class="w-10 h-10 rounded-full bg-gray-900 text-white font-bold text-xs flex items-center justify-center shadow-md z-10 shrink-0">DAY-3</div>
+                    </div>
+                    <div class="flex-grow pb-2">
+                        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+                            <div class="flex flex-wrap items-center gap-5 pb-4 mb-4 border-b border-gray-100 text-sm font-semibold select-none">
+                                <span class="text-gray-900 border-b-2 border-gray-900 pb-1 flex items-center gap-1.5">行程1 <i class="fa-solid fa-plane text-xs"></i></span>
+                                <span class="text-gray-400 flex items-center gap-1.5">行程2 <i class="fa-solid fa-hotel text-xs"></i></span>
+                                <span class="text-gray-400 flex items-center gap-1.5">行程3 <i class="fa-solid fa-utensils text-xs"></i></span>
+                                <span class="text-gray-400 flex items-center gap-1.5">行程4</span>
+                            </div>
+                            <div class="space-y-4 text-sm">
+                                <div>
+                                    <h4 class="font-bold text-gray-900 mb-1">會安古鎮漫遊與迦南島竹籃船</h4>
+                                    <p class="text-gray-600 leading-relaxed mb-4">穿梭於被列為世界文化遺產的會安古鎮燈籠街，體驗特色竹籃船與夜訪秋盆河水燈祈福。</p>
+                                </div>
+                                <div class="space-y-3 pt-2">
+                                    <div onclick="openSpotModal('迦南島椰林竹籃船', '體驗活動', '搭乘越南特色碗公船穿梭於水椰林間，觀賞精采絕倫的旋轉船表演與水上漁歌。')" class="bg-gray-50/80 rounded-xl p-4 border border-gray-200/60 flex flex-col sm:flex-row gap-4 items-center hover:-translate-y-1 hover:shadow-lg hover:border-[#F03742] transition-all duration-300 cursor-pointer group">
+                                        <div class="w-full sm:w-48 h-28 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 font-medium text-xs shrink-0 overflow-hidden">
+                                            <span class="group-hover:scale-110 transition-transform duration-300">景點圖片</span>
+                                        </div>
+                                        <div class="flex-grow">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <h5 class="font-bold text-gray-900 text-sm group-hover:text-[#F03742] transition-colors">迦南島椰林竹籃船</h5>
+                                                <span class="text-[10px] bg-gray-200 text-gray-700 px-2 py-0.5 rounded">體驗活動</span>
+                                            </div>
+                                            <p class="text-xs text-gray-600 line-clamp-2">搭乘越南特色碗公船穿梭於水椰林間，觀賞精采絕倫的旋轉船表演與水上漁歌。</p>
+                                        </div>
+                                    </div>
+                                    <div onclick="openSpotModal('會安古城與日本橋', '下車參觀', '漫步於融合中國、日本與歐洲風格的百年古老建築群，感性感受文化交融的獨特魅力。')" class="bg-gray-50/80 rounded-xl p-4 border border-gray-200/60 flex flex-col sm:flex-row gap-4 items-center hover:-translate-y-1 hover:shadow-lg hover:border-[#F03742] transition-all duration-300 cursor-pointer group">
+                                        <div class="w-full sm:w-48 h-28 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 font-medium text-xs shrink-0 overflow-hidden">
+                                            <span class="group-hover:scale-110 transition-transform duration-300">景點圖片</span>
+                                        </div>
+                                        <div class="flex-grow">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <h5 class="font-bold text-gray-900 text-sm group-hover:text-[#F03742] transition-colors">會安古城與日本橋</h5>
+                                                <span class="text-[10px] bg-gray-200 text-gray-700 px-2 py-0.5 rounded">下車參觀</span>
+                                            </div>
+                                            <p class="text-xs text-gray-600 line-clamp-2">漫步於融合中國、日本與歐洲風格的百年古老建築群，感性感受文化交融的獨特魅力。</p>
+                                        </div>
+                                    </div>
+                                    <div onclick="openSpotModal('秋盆河水燈祈福', '特別安排', '夜晚搭乘小舟遊覽秋盆河，親手將滿載祝福的花燈許願施放於河面上。')" class="bg-gray-50/80 rounded-xl p-4 border border-gray-200/60 flex flex-col sm:flex-row gap-4 items-center hover:-translate-y-1 hover:shadow-lg hover:border-[#F03742] transition-all duration-300 cursor-pointer group">
+                                        <div class="w-full sm:w-48 h-28 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 font-medium text-xs shrink-0 overflow-hidden">
+                                            <span class="group-hover:scale-110 transition-transform duration-300">景點圖片</span>
+                                        </div>
+                                        <div class="flex-grow">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <h5 class="font-bold text-gray-900 text-sm group-hover:text-[#F03742] transition-colors">秋盆河水燈祈福</h5>
+                                                <span class="text-[10px] bg-gray-200 text-gray-700 px-2 py-0.5 rounded">特別安排</span>
+                                            </div>
+                                            <p class="text-xs text-gray-600 line-clamp-2">夜晚搭乘小舟遊覽秋盆河，親手將滿載祝福的花燈許願施放於河面上。</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DAY 4 -->
+                <div id="overview-day-4" class="overview-day-section flex gap-4 sm:gap-6 relative" data-day="4">
+                    <div class="flex flex-col items-center">
+                        <div class="w-10 h-10 rounded-full bg-gray-900 text-white font-bold text-xs flex items-center justify-center shadow-md z-10 shrink-0">DAY-4</div>
+                    </div>
+                    <div class="flex-grow pb-2">
+                        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+                            <div class="flex flex-wrap items-center gap-5 pb-4 mb-4 border-b border-gray-100 text-sm font-semibold select-none">
+                                <span class="text-gray-900 border-b-2 border-gray-900 pb-1 flex items-center gap-1.5">行程1 <i class="fa-solid fa-plane text-xs"></i></span>
+                                <span class="text-gray-400 flex items-center gap-1.5">行程2 <i class="fa-solid fa-hotel text-xs"></i></span>
+                                <span class="text-gray-400 flex items-center gap-1.5">行程3 <i class="fa-solid fa-utensils text-xs"></i></span>
+                                <span class="text-gray-400 flex items-center gap-1.5">行程4</span>
+                            </div>
+                            <div class="space-y-4 text-sm">
+                                <div>
+                                    <h4 class="font-bold text-gray-900 mb-1">順化歷史古都文化深度之旅</h4>
+                                    <p class="text-gray-600 leading-relaxed mb-4">參觀聯合國教科文組織世界遺產「順化皇城」，造訪古色古香的皇家宮殿與陵墓。</p>
+                                </div>
+                                <div class="space-y-3 pt-2">
+                                    <div onclick="openSpotModal('順化皇城（大內宿）', '入內參觀', '阮朝時期的皇家宮殿，仿造北京紫禁城建造，滿載濃厚的越南古都皇室歷史氣息。')" class="bg-gray-50/80 rounded-xl p-4 border border-gray-200/60 flex flex-col sm:flex-row gap-4 items-center hover:-translate-y-1 hover:shadow-lg hover:border-[#F03742] transition-all duration-300 cursor-pointer group">
+                                        <div class="w-full sm:w-48 h-28 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 font-medium text-xs shrink-0 overflow-hidden">
+                                            <span class="group-hover:scale-110 transition-transform duration-300">景點圖片</span>
+                                        </div>
+                                        <div class="flex-grow">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <h5 class="font-bold text-gray-900 text-sm group-hover:text-[#F03742] transition-colors">順化皇城（大內宿）</h5>
+                                                <span class="text-[10px] bg-gray-200 text-gray-700 px-2 py-0.5 rounded">入內參觀</span>
+                                            </div>
+                                            <p class="text-xs text-gray-600 line-clamp-2">阮朝時期的皇家宮殿，仿造北京紫禁城建造，滿載濃厚的越南古都皇室歷史氣息。</p>
+                                        </div>
+                                    </div>
+                                    <div onclick="openSpotModal('天姥寺', '下車參觀', '聳立於香江之畔的七層八角磚塔，是順化最古老且最具象徵意義的佛寺地標。')" class="bg-gray-50/80 rounded-xl p-4 border border-gray-200/60 flex flex-col sm:flex-row gap-4 items-center hover:-translate-y-1 hover:shadow-lg hover:border-[#F03742] transition-all duration-300 cursor-pointer group">
+                                        <div class="w-full sm:w-48 h-28 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 font-medium text-xs shrink-0 overflow-hidden">
+                                            <span class="group-hover:scale-110 transition-transform duration-300">景點圖片</span>
+                                        </div>
+                                        <div class="flex-grow">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <h5 class="font-bold text-gray-900 text-sm group-hover:text-[#F03742] transition-colors">天姥寺</h5>
+                                                <span class="text-[10px] bg-gray-200 text-gray-700 px-2 py-0.5 rounded">下車參觀</span>
+                                            </div>
+                                            <p class="text-xs text-gray-600 line-clamp-2">聳立於香江之畔的七層八角磚塔，是順化最古老且最具象徵意義的佛寺地標。</p>
+                                        </div>
+                                    </div>
+                                    <div onclick="openSpotModal('啟定皇陵', '入內參觀', '結合東西方建築風格的華麗皇陵，內部充滿絕美的彩色玻璃與陶瓷拼貼藝術。')" class="bg-gray-50/80 rounded-xl p-4 border border-gray-200/60 flex flex-col sm:flex-row gap-4 items-center hover:-translate-y-1 hover:shadow-lg hover:border-[#F03742] transition-all duration-300 cursor-pointer group">
+                                        <div class="w-full sm:w-48 h-28 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 font-medium text-xs shrink-0 overflow-hidden">
+                                            <span class="group-hover:scale-110 transition-transform duration-300">景點圖片</span>
+                                        </div>
+                                        <div class="flex-grow">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <h5 class="font-bold text-gray-900 text-sm group-hover:text-[#F03742] transition-colors">啟定皇陵</h5>
+                                                <span class="text-[10px] bg-gray-200 text-gray-700 px-2 py-0.5 rounded">入內參觀</span>
+                                            </div>
+                                            <p class="text-xs text-gray-600 line-clamp-2">結合東西方建築風格的華麗皇陵，內部充滿絕美的彩色玻璃與陶瓷拼貼藝術。</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DAY 5 -->
+                <div id="overview-day-5" class="overview-day-section flex gap-4 sm:gap-6 relative" data-day="5">
+                    <div class="flex flex-col items-center">
+                        <div class="w-10 h-10 rounded-full bg-gray-900 text-white font-bold text-xs flex items-center justify-center shadow-md z-10 shrink-0">DAY-5</div>
+                    </div>
+                    <div class="flex-grow pb-2">
+                        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+                            <div class="flex flex-wrap items-center gap-5 pb-4 mb-4 border-b border-gray-100 text-sm font-semibold select-none">
+                                <span class="text-gray-900 border-b-2 border-gray-900 pb-1 flex items-center gap-1.5">行程1 <i class="fa-solid fa-plane text-xs"></i></span>
+                                <span class="text-gray-400 flex items-center gap-1.5">行程2 <i class="fa-solid fa-hotel text-xs"></i></span>
+                                <span class="text-gray-400 flex items-center gap-1.5">行程3 <i class="fa-solid fa-utensils text-xs"></i></span>
+                                <span class="text-gray-400 flex items-center gap-1.5">行程4</span>
+                            </div>
+                            <div class="space-y-4 text-sm">
+                                <div>
+                                    <h4 class="font-bold text-gray-900 mb-1">峴港特產巡禮與賦歸溫馨的家</h4>
+                                    <p class="text-gray-600 leading-relaxed mb-4">享用豐富早餐後前往當地市集與特產店採買伴手禮，隨後前往機場搭機返回溫暖的家。</p>
+                                </div>
+                                <div class="space-y-3 pt-2">
+                                    <div onclick="openSpotModal('韓市場 Han Market', '自由採購', '峴港最具代表性的傳統室內市場，採購越南咖啡、腰果及手工藝品的絕佳去處。')" class="bg-gray-50/80 rounded-xl p-4 border border-gray-200/60 flex flex-col sm:flex-row gap-4 items-center hover:-translate-y-1 hover:shadow-lg hover:border-[#F03742] transition-all duration-300 cursor-pointer group">
+                                        <div class="w-full sm:w-48 h-28 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 font-medium text-xs shrink-0 overflow-hidden">
+                                            <span class="group-hover:scale-110 transition-transform duration-300">景點圖片</span>
+                                        </div>
+                                        <div class="flex-grow">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <h5 class="font-bold text-gray-900 text-sm group-hover:text-[#F03742] transition-colors">韓市場 Han Market</h5>
+                                                <span class="text-[10px] bg-gray-200 text-gray-700 px-2 py-0.5 rounded font-medium">自由採購</span>
+                                            </div>
+                                            <p class="text-xs text-gray-600 line-clamp-2">峴港最具代表性的傳統室內市場，採購越南咖啡、腰果及手工藝品的絕佳去處。</p>
+                                        </div>
+                                    </div>
+                                    <div onclick="openSpotModal('峴港粉紅大教堂', '下車參觀', '法國殖民時期建立的哥德式粉紅色教堂，頂端設有風向公雞標誌，熱門拍照打卡點。')" class="bg-gray-50/80 rounded-xl p-4 border border-gray-200/60 flex flex-col sm:flex-row gap-4 items-center hover:-translate-y-1 hover:shadow-lg hover:border-[#F03742] transition-all duration-300 cursor-pointer group">
+                                        <div class="w-full sm:w-48 h-28 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 font-medium text-xs shrink-0 overflow-hidden">
+                                            <span class="group-hover:scale-110 transition-transform duration-300">景點圖片</span>
+                                        </div>
+                                        <div class="flex-grow">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <h5 class="font-bold text-gray-900 text-sm group-hover:text-[#F03742] transition-colors">峴港粉紅大教堂</h5>
+                                                <span class="text-[10px] bg-gray-200 text-gray-700 px-2 py-0.5 rounded font-medium">下車參觀</span>
+                                            </div>
+                                            <p class="text-xs text-gray-600 line-clamp-2">法國殖民時期建立的哥德式粉紅色教堂，頂端設有風向公雞標誌，熱門拍照打卡點。</p>
+                                        </div>
+                                    </div>
+                                    <div onclick="openSpotModal('峴港國際機場', '返程搭機', '整理行裝辦理登機手續，帶著美好的越南旅程回憶搭機飛返溫暖的家。')" class="bg-gray-50/80 rounded-xl p-4 border border-gray-200/60 flex flex-col sm:flex-row gap-4 items-center hover:-translate-y-1 hover:shadow-lg hover:border-[#F03742] transition-all duration-300 cursor-pointer group">
+                                        <div class="w-full sm:w-48 h-28 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 font-medium text-xs shrink-0 overflow-hidden">
+                                            <span class="group-hover:scale-110 transition-transform duration-300">景點圖片</span>
+                                        </div>
+                                        <div class="flex-grow">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <h5 class="font-bold text-gray-900 text-sm group-hover:text-[#F03742] transition-colors">峴港國際機場</h5>
+                                                <span class="text-[10px] bg-gray-200 text-gray-700 px-2 py-0.5 rounded font-medium">返程搭機</span>
+                                            </div>
+                                            <p class="text-xs text-gray-600 line-clamp-2">整理行裝辦理登機手續，帶著美好的越南旅程回憶搭機飛返溫暖的家。</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ==================== 模式二：100% 滿版互動導覽 (對應第1張圖) ==================== -->
+        <div id="view-interactive" class="w-full flex-grow flex flex-col hidden">
+            
+            <!-- 上方標籤導覽列 (全寬) -->
+            <div class="bg-white border-b border-gray-200 shadow-sm sticky top-[53px] sm:top-[57px] z-40 px-4 sm:px-8 py-3 w-full">
+                <div class="max-w-7xl mx-auto flex flex-col space-y-3">
+                    <!-- 置頂/左上角「< 返回產品頁」按鈕 -->
+                    <div class="flex items-center">
+                        <button onclick="switchView('overview')" class="text-sm font-bold text-gray-900 hover:text-[#F03742] transition flex items-center gap-1.5">
+                            &lt; 返回產品頁
+                        </button>
+                    </div>
+
+                    <!-- 天數與選單列 -->
+                    <div class="flex items-center gap-3 overflow-x-auto pb-1 no-scrollbar">
+                        <button class="px-5 py-2.5 rounded-xl font-bold text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 transition shrink-0 border border-gray-300">行程總覽</button>
+                        <button onclick="selectDay(1)" id="tab-day1" class="px-5 py-2.5 rounded-xl font-bold text-sm bg-gray-900 text-white shadow transition shrink-0">DAY-1</button>
+                        <button onclick="selectDay(2)" id="tab-day2" class="px-5 py-2.5 rounded-xl font-medium text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 transition shrink-0 border border-gray-300">DAY-2</button>
+                        <button onclick="selectDay(3)" id="tab-day3" class="px-5 py-2.5 rounded-xl font-medium text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 transition shrink-0 border border-gray-300">DAY-3</button>
+                        <button onclick="selectDay(4)" id="tab-day4" class="px-5 py-2.5 rounded-xl font-medium text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 transition shrink-0 border border-gray-300">DAY-4</button>
+                        <button onclick="selectDay(5)" id="tab-day5" class="px-5 py-2.5 rounded-xl font-medium text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 transition shrink-0 border border-gray-300">DAY-5</button>
+                        <button class="px-5 py-2.5 rounded-xl font-medium text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 transition shrink-0 border border-gray-300">旅遊資訊</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 主體：左右分割區塊 (填滿容器) -->
+            <div class="flex-grow grid grid-cols-1 lg:grid-cols-12 w-full">
+                
+                <!-- 左側：行程內容與時間軸 (佔 7 欄) -->
+                <div class="lg:col-span-7 px-4 sm:px-12 py-8 bg-gray-50 flex flex-col">
+                    <!-- 靜態標籤列 -->
+                    <div class="flex flex-wrap items-center gap-5 mb-8 text-sm font-semibold border-b border-gray-200 pb-3 select-none">
+                        <span class="text-gray-900 border-b-2 border-gray-900 pb-1 flex items-center gap-1.5">行程1 <i class="fa-solid fa-plane text-xs"></i></span>
+                        <span class="text-gray-400 flex items-center gap-1.5">行程2 <i class="fa-solid fa-hotel text-xs"></i></span>
+                        <span class="text-gray-400 flex items-center gap-1.5">行程3 <i class="fa-solid fa-utensils text-xs"></i></span>
+                        <span class="text-gray-400 flex items-center gap-1.5">行程4</span>
+                    </div>
+
+                    <div class="space-y-3 mb-8">
+                        <h3 id="interactive-day-title" class="font-bold text-gray-900 text-base">全程NO SHOPPING不進購物站，旅程輕鬆又自在~</h3>
+                        <p id="interactive-day-desc" class="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                            今日集合搭機飛往越南峴港，為越南的第三大城，更是越南歷史上重要的文化之都，更被美國國家地理雜誌評選為全球50個一生中必遊景點之一。
+                        </p>
+                    </div>
+
+                    <!-- 帶有垂直連線的時間軸節點列表 (動態渲染) -->
+                    <div id="interactive-timeline-container" class="relative pl-8 space-y-6 timeline-line">
+                        <!-- JS 動態插入 -->
+                    </div>
+                </div>
+
+                <!-- 右側：動態地圖 (佔 5 欄，滿版黏貼置頂) -->
+                <div class="lg:col-span-5 bg-gray-200 relative min-h-[450px] lg:min-h-screen lg:sticky lg:top-[57px] flex flex-col items-center justify-center p-6 border-t lg:border-t-0 lg:border-l border-gray-300 overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-br from-gray-200 via-gray-300 to-gray-200 opacity-90"></div>
+                    <div class="absolute inset-0 grid grid-cols-4 grid-rows-6 opacity-20 pointer-events-none">
+                        <div class="border-b border-r border-gray-900"></div><div class="border-b border-r border-gray-900"></div><div class="border-b border-r border-gray-900"></div><div class="border-b border-gray-900"></div>
+                        <div class="border-b border-r border-gray-900"></div><div class="border-b border-r border-gray-900"></div><div class="border-b border-r border-gray-900"></div><div class="border-b border-gray-900"></div>
+                        <div class="border-b border-r border-gray-900"></div><div class="border-b border-r border-gray-900"></div><div class="border-b border-r border-gray-900"></div><div class="border-b border-gray-900"></div>
+                        <div class="border-b border-r border-gray-900"></div><div class="border-b border-r border-gray-900"></div><div class="border-b border-r border-gray-900"></div><div class="border-b border-gray-900"></div>
+                        <div class="border-b border-r border-gray-900"></div><div class="border-b border-r border-gray-900"></div><div class="border-b border-r border-gray-900"></div><div class="border-b border-gray-900"></div>
+                        <div class="border-r border-gray-900"></div><div class="border-r border-gray-900"></div><div class="border-r border-gray-900"></div><div></div>
+                    </div>
+                    
+                    <div class="relative z-10 text-center bg-white/90 backdrop-blur-md px-8 py-6 rounded-2xl shadow-xl border border-white max-w-sm w-full transition-all duration-300 transform scale-100" id="map-card">
+                        <div class="w-12 h-12 bg-[#F03742] text-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-md">
+                            <i class="fa-solid fa-map-location-dot text-lg"></i>
+                        </div>
+                        <div class="text-xs font-semibold text-[#F03742] tracking-wider mb-1 uppercase" id="map-subtitle">MAP 依據景點移動</div>
+                        <div class="text-xl font-bold text-gray-900 mb-2" id="map-title">美溪沙灘</div>
+                        <p class="text-xs text-gray-500 leading-relaxed" id="map-desc">點擊左側任一景點卡片，右側動態地圖將立即平滑定位並放大顯示該景點的遊覽範圍。</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        const itineraryData = {
+            1: {
+                title: "全程NO SHOPPING不進購物站，旅遊輕鬆又自在~",
+                desc: "今日集合搭機飛往越南峴港，為越南的第三大城，更是越南歷史上重要的文化之都，更被美國國家地理雜誌評選為全球50個一生中必遊景點之一。",
+                spots: [
+                    { name: "景點名稱", tag: "下車參觀", desc: "今日集合搭機飛往越南峴港，為越南的第三大城，更是越南歷史上重要的文化之都，更被美國國家地理雜誌評選為全球50個一生中必遊景點之一。" },
+                    { name: "景點名稱", tag: "下車參觀", desc: "今日集合搭機飛往越南峴港，為越南的第三大城，更是越南歷史上重要的文化之都，更被美國國家地理雜誌評選為全球50個一生中必遊景點之一。" },
+                    { name: "景點名稱", tag: "下車參觀", desc: "今日集合搭機飛往越南峴港，為越南的第三大城，更是越南歷史上重要的文化之都，更被美國國家地理雜誌評選為全球50個一生中必遊景點之一。" }
+                ],
+                hotel: "旅館\n會安Emm Hotel Hoi An Ally Beach Boutique Hotel HoiA會安"
+            },
+            2: {
+                title: "巴拿山黃金橋天空之城一日遊",
+                desc: "搭乘世界最長單纜高空纜車前往巴拿山，漫步於著名的巨手黃金橋，俯瞰雲海與峴港市景。",
+                spots: [
+                    { name: "巴拿山黃金橋", tag: "入內參觀", desc: "被選為世界新七大奇蹟之一的巨大手掌造型橋樑，置身於雲霧繚繞的避暑勝地。" },
+                    { name: "法國村建築群", tag: "下車參觀", desc: "重現19世紀法國古典小鎮的建築風格，彷彿置身於歐陸浪漫小鎮之中。" },
+                    { name: "夢幻樂園 Fantasy Park", tag: "特別安排", desc: "越南最大室內遊樂園，擁有豐富的遊樂設施與冒險體驗活動。" }
+                ],
+                hotel: "旅館\n會安Emm Hotel Hoi An Ally Beach"
+            },
+            3: {
+                title: "會安古鎮漫遊與迦南島竹籃船",
+                desc: "穿梭於被列為世界文化遺產的會安古鎮燈籠街，體驗特色竹籃船與夜訪秋盆河水燈祈福。",
+                spots: [
+                    { name: "迦南島椰林竹籃船", tag: "體驗活動", desc: "搭乘越南特色碗公船穿梭於水椰林間，觀賞精采絕倫的旋轉船表演與水上漁歌。" },
+                    { name: "會安古城與日本橋", tag: "下車參觀", desc: "漫步於融合中國、日本與歐洲風格的百年古老建築群，感性感受文化交融的獨特魅力。" },
+                    { name: "秋盆河水燈祈福", tag: "特別安排", desc: "夜晚搭乘小舟遊覽秋盆河，親手將滿載祝福的花燈許願施放於河面上。" }
+                ],
+                hotel: "旅館\n會安高級度假飯店"
+            },
+            4: {
+                title: "順化歷史古都文化深度之旅",
+                desc: "參觀聯合國教科文組織世界遺產「順化皇城」，造訪古色古香的皇家宮殿與陵墓。",
+                spots: [
+                    { name: "順化皇城（大內宿）", tag: "入內參觀", desc: "阮朝時期的皇家宮殿，仿造北京紫禁城建造，滿載濃厚的越南古都皇室歷史氣息。" },
+                    { name: "天姥寺", tag: "下車參觀", desc: "聳立於香江之畔的七層八角磚塔，是順化最古老且最具象徵意義的佛寺地標。" },
+                    { name: "啟定皇陵", tag: "入內參觀", desc: "結合東西方建築風格的華麗皇陵，內部充滿絕美的彩色玻璃與陶瓷拼貼藝術。" }
+                ],
+                hotel: "旅館\n順化帝國飯店"
+            },
+            5: {
+                title: "峴港特產巡禮與賦歸溫馨的家",
+                desc: "享用豐富早餐後前往當地市集與特產店採買伴手禮，隨後前往機場搭機返回溫暖的家。",
+                spots: [
+                    { name: "韓市場 Han Market", tag: "自由採購", desc: "峴港最具代表性的傳統室內市場，採購越南咖啡、腰果及手工藝品的絕佳去處。" },
+                    { name: "峴港粉紅大教堂", tag: "下車參觀", desc: "法國殖民時期建立的哥德式粉紅色教堂，頂端設有風向公雞標誌，熱門拍照打卡點。" },
+                    { name: "峴港國際機場", tag: "返程搭機", desc: "整理行裝辦理登機手續，帶著美好的越南旅程回憶搭機飛返溫暖的家。" }
+                ],
+                hotel: "溫馨的家"
+            }
+        };
+
+        let currentActiveDay = 1;
+        let lastScrolledDay = 1;
+
+        function switchView(mode) {
+            const viewOverview = document.getElementById('view-overview');
+            const viewInteractive = document.getElementById('view-interactive');
+            const btnOverview = document.getElementById('btn-overview');
+            const btnInteractive = document.getElementById('btn-interactive');
+            const headerTitle = document.getElementById('header-title');
+
+            if (mode === 'overview') {
+                viewOverview.classList.remove('hidden');
+                viewInteractive.classList.add('hidden');
+                btnOverview.className = "px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition bg-[#F03742] text-white shadow";
+                btnInteractive.className = "px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition text-gray-300 hover:text-white";
+                headerTitle.innerText = "清單式時間軸：專注於「國文閱讀、預覽、傳統列印」。寬度：1200px (標準WEB版寬)";
+            } else {
+                viewOverview.classList.add('hidden');
+                viewInteractive.classList.remove('hidden');
+                viewInteractive.classList.add('flex');
+                btnInteractive.className = "px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition bg-[#F03742] text-white shadow";
+                btnOverview.className = "px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition text-gray-300 hover:text-white";
+                headerTitle.innerText = "互動地圖：專注於「3D 互動、動態導覽、行中虛擬驗證」。(100% 滿版)";
+                renderInteractiveDay(currentActiveDay);
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function selectDay(dayNum) {
+            currentActiveDay = dayNum;
+            for (let i = 1; i <= 5; i++) {
+                const btn = document.getElementById(`tab-day${i}`);
+                if (btn) {
+                    btn.className = "px-5 py-2.5 rounded-xl font-medium text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 transition shrink-0 border border-gray-300";
+                }
+            }
+            const activeBtn = document.getElementById(`tab-day${dayNum}`);
+            if (activeBtn) {
+                activeBtn.className = "px-5 py-2.5 rounded-xl font-bold text-sm bg-[#F03742] text-white shadow transition shrink-0";
+            }
+            renderInteractiveDay(dayNum);
+        }
+
+        function renderInteractiveDay(dayNum) {
+            const data = itineraryData[dayNum];
+            if (!data) return;
+
+            document.getElementById('interactive-day-title').innerText = data.title;
+            document.getElementById('interactive-day-desc').innerText = data.desc;
+
+            const container = document.getElementById('interactive-timeline-container');
+            let html = '';
+
+            data.spots.forEach((spot, index) => {
+                html += `
+                    <div class="relative z-10 flex gap-4 items-start group cursor-pointer" onclick="onInteractiveSpotClick(event, ${index + 1}, '${spot.name}', '${spot.tag}', '${spot.desc}')">
+                        <div class="absolute -left-8 w-6 h-6 rounded-full bg-gray-900 text-white text-[10px] font-bold flex items-center justify-center shadow group-hover:bg-[#F03742] transition">
+                            景點
+                        </div>
+                        <div class="bg-white rounded-2xl p-4 sm:p-5 border border-gray-200 shadow-sm flex-grow group-hover:border-[#F03742] group-hover:-translate-y-1 group-hover:shadow-lg transition-all duration-300">
+                            <div class="flex flex-col sm:flex-row gap-4 items-center">
+                                <div class="w-full sm:w-36 h-24 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 text-xs font-medium shrink-0 overflow-hidden">
+                                    <span class="group-hover:scale-110 transition-transform duration-300">景點圖片</span>
+                                </div>
+                                <div class="flex-grow w-full">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <h4 class="font-bold text-gray-900 text-sm group-hover:text-[#F03742] transition-colors">${spot.name}</h4>
+                                        <span class="text-[10px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-medium">${spot.tag}</span>
+                                    </div>
+                                    <p class="text-xs text-gray-600 line-clamp-2">${spot.desc}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `
+                <div class="relative z-10 flex gap-4 items-start group">
+                    <div class="absolute -left-8 w-6 h-6 rounded-full bg-[#F03742] text-white text-[10px] font-bold flex items-center justify-center shadow">
+                        飯店
+                    </div>
+                    <div class="bg-white rounded-2xl p-4 sm:p-5 border border-gray-200 shadow-sm flex-grow group-hover:-translate-y-0.5 hover:shadow-md transition-all">
+                        <h4 class="font-bold text-gray-900 text-sm mb-1">${data.hotel}</h4>
+                        <p class="text-xs text-gray-600">結束精彩豐富的一日行程，返航或辦理登機／入住休息。</p>
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+            highlightSpot(1, data.spots[0].name, data.spots[0].desc);
+        }
+
+        function highlightSpot(index, spotName, spotDesc) {
+            const mapTitle = document.getElementById('map-title');
+            const mapSubtitle = document.getElementById('map-subtitle');
+            const mapDesc = document.getElementById('map-desc');
+            const mapCard = document.getElementById('map-card');
+
+            mapSubtitle.innerText = `DAY-${currentActiveDay} 景點導覽 #${index}`;
+            mapTitle.innerText = spotName;
+            mapDesc.innerText = spotDesc || `地圖已自動對焦至「${spotName}」，提供動態實景導覽與移動路線。`;
+
+            mapCard.classList.remove('scale-100');
+            mapCard.classList.add('scale-105', 'bg-red-50', 'border-red-300');
+            setTimeout(() => {
+                mapCard.classList.remove('scale-105', 'bg-red-50', 'border-red-300');
+                mapCard.classList.add('scale-100');
+            }, 300);
+        }
+
+        /* 光箱Modal開關與互動邏輯 */
+        function openSpotModal(title, tag, desc) {
+            const modal = document.getElementById('spot-modal');
+            const modalCard = document.getElementById('modal-card');
+            
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-tag').innerText = tag || '下車參觀';
+            document.getElementById('modal-desc').innerText = desc;
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modalCard.classList.remove('scale-95', 'opacity-0');
+                modalCard.classList.add('scale-100', 'opacity-100');
+            }, 10);
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSpotModal() {
+            const modal = document.getElementById('spot-modal');
+            const modalCard = document.getElementById('modal-card');
+            
+            modalCard.classList.remove('scale-100', 'opacity-100');
+            modalCard.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }, 200);
+        }
+
+        function onInteractiveSpotClick(e, index, spotName, spotTag, spotDesc) {
+            highlightSpot(index, spotName, spotDesc);
+            openSpotModal(spotName, spotTag, spotDesc);
+        }
+
+        // 監聽 Escape 鍵關閉光箱
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeSpotModal();
+            }
+        });
+
+        // 滾動監控：在「完整行程 (1200px)」模式下，當頁面捲動時偵測目前進入畫面中的 DAY，自動更新上方置頂地圖的標題並帶有跳動特效
+        window.addEventListener('scroll', function() {
+            const viewOverview = document.getElementById('view-overview');
+            if (viewOverview.classList.contains('hidden')) return;
+
+            const sections = document.querySelectorAll('.overview-day-section');
+            const mapLabel = document.getElementById('overview-map-label');
+            const overviewMapCard = document.getElementById('overview-map-card');
+            
+            let activeDay = 1;
+            sections.forEach((section) => {
+                const rect = section.getBoundingClientRect();
+                if (rect.top <= 250) {
+                    activeDay = parseInt(section.getAttribute('data-day'));
+                }
+            });
+
+            if (activeDay !== lastScrolledDay) {
+                lastScrolledDay = activeDay;
+                mapLabel.innerText = `依天數移動：DAY-${activeDay} 行程總覽`;
+                
+                // 觸發卡片跳動特效
+                overviewMapCard.classList.add('map-card-bounce');
+                setTimeout(() => {
+                    overviewMapCard.classList.remove('map-card-bounce');
+                }, 350);
+            }
+        });
+
+        window.onload = function() {
+            renderInteractiveDay(1);
+        };
+    </script>
+</body>
