@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Step-2 : 輸入簡訊內容</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for globe icon and chevron -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
+        body {
+            font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f3f4f6;
+        }
+        
+        /* Custom capsule styling matching screenshots */
+        .url-capsule-blue {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 2px 10px;
+            border-radius: 9999px;
+            font-size: 0.825rem;
+            color: #0284c7;
+            background-color: #e0f2fe;
+            border: 1px solid #7dd3fc;
+            vertical-align: baseline;
+            margin: 0 2px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+            line-height: 1.4;
+        }
+
+        .url-capsule-red {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 2px 10px;
+            border-radius: 9999px;
+            font-size: 0.825rem;
+            color: #ef4444;
+            background-color: #fef2f2;
+            border: 1px solid #fca5a5;
+            vertical-align: baseline;
+            margin: 0 2px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+            line-height: 1.4;
+        }
+
+        /* Custom scrollbar for textarea only, hide scrollbar on overlay to prevent double scrollbars */
+        textarea::-webkit-scrollbar {
+            width: 4px;
+        }
+        textarea::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 4px;
+        }
+        textarea {
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 transparent;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-2 sm:p-4 bg-gray-150">
+
+    <div class="w-full max-w-sm bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden relative p-6">
+        
+        <!-- Header with vertical bar aligned to 'Step-2' heading -->
+        <div class="flex items-center gap-2 mb-3">
+            <div class="w-1.5 h-5 bg-red-500 rounded-full flex-shrink-0"></div>
+            <h1 class="text-lg font-bold text-gray-900 tracking-tight">Step-2 : 輸入簡訊內容</h1>
+        </div>
+
+        <!-- Info tips -->
+        <div class="space-y-1 mb-4 text-xs text-gray-400 font-normal">
+            <div class="flex items-center gap-1.5">
+                <i class="fa-regular fa-circle-question text-blue-400 text-xs"></i>
+                <span>您可在「簡訊管理」新增30組常用簡訊</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <i class="fa-regular fa-circle-question text-blue-400 text-xs"></i>
+                <span>簡訊內容需包含雄獅、旅天下、日華</span>
+            </div>
+        </div>
+
+        <!-- Template Selector Dropdown -->
+        <div class="mb-4">
+            <div class="relative">
+                <select id="templateSelect" class="w-full appearance-none bg-white border border-gray-300 text-gray-700 py-2 px-3 pr-8 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-red-500 cursor-pointer">
+                    <option value="default">截圖 1：系統預設 (合規網址 - 藍色膠囊)</option>
+                    <option value="invalid_url">截圖 2：不合規網址 (facebook.com)</option>
+                    <option value="malformed_url">截圖 3：錯誤網址 (line..me) + 無品牌關鍵字</option>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-gray-600">
+                    <i class="fa-solid fa-caret-down text-xs"></i>
+                </div>
+            </div>
+        </div>
+
+        <div id="editorWrapper" class="relative border border-gray-300 rounded-xl p-3 mb-2 transition-colors duration-150 bg-white min-h-[220px]">
+            
+            <!-- Rich Text Visual Display Layer (Renders Capsules, pointer-events none so clicks pass through) -->
+            <div id="previewOverlay" class="w-full h-52 text-sm text-gray-800 leading-relaxed whitespace-pre-wrap break-all absolute inset-0 p-3 pointer-events-none overflow-hidden z-0 select-none"></div>
+            
+            <!-- Direct Editable Text Input (Carries cursor, edits directly, owns the sole scrollbar) -->
+            <textarea id="smsContent" rows="8" 
+                class="w-full h-52 text-sm text-transparent bg-transparent resize-none focus:outline-none leading-relaxed relative z-10 caret-gray-900 border-none p-0 focus:ring-0 overflow-y-auto"
+                placeholder="請輸入簡訊內容..."
+                spellcheck="false">雄獅貴賓您好，我是8/7-8/11中越領隊小蘇~蘇翠華,手機0958652298,幾點行前提醒 1.請準時於8/23 7:15在桃園機場第二航廈長榮航空20櫃檯後方集合. 2.護照自帶貴賓,請確認效期回程六個月以上,且無破(污)損,掉頁脫線. 3.請於出發前三日內完成填寫越南電子入境卡( PAI)網址
+https://line.me/R/ti/p/@liontravel
+範本我會放在群組內記事本供參考 4.本團群組歡迎自由以我電話搜尋,我再將各位加入.
+系統發送請勿回覆</textarea>
+        </div>
+
+        <!-- Character Counter & Preview Button -->
+        <div class="flex items-center justify-between mb-4">
+            <span id="charCount" class="text-xs text-gray-500 font-medium">78 / 300 字</span>
+            <button id="previewBtn" class="px-4 py-1 border border-red-400 text-red-500 rounded-lg text-sm hover:bg-red-50 transition-colors">
+                預覽
+            </button>
+        </div>
+
+        <!-- Error Alert Containers -->
+        <div id="errorAlertContainer" class="space-y-2 mb-4">
+            <!-- Alert banners added dynamically via JS -->
+        </div>
+
+        <div class="space-y-2.5 pt-1">
+            <label class="flex items-center gap-2.5 cursor-pointer select-none">
+                <input type="checkbox" id="chkNoReply" checked class="w-4 h-4 rounded text-red-500 border-gray-300 focus:ring-red-400 accent-red-500">
+                <span class="text-xs sm:text-sm text-gray-700">系統發送請勿回覆</span>
+            </label>
+            <label class="flex items-center gap-2.5 cursor-pointer select-none">
+                <input type="checkbox" id="chkSaveModify" checked class="w-4 h-4 rounded text-red-500 border-gray-300 focus:ring-red-400 accent-red-500">
+                <span class="text-xs sm:text-sm text-gray-700">儲存此次修改</span>
+            </label>
+            <label class="flex items-center gap-2.5 cursor-pointer select-none">
+                <input type="checkbox" id="chkSaveCommon" class="w-4 h-4 rounded text-red-500 border-gray-300 focus:ring-red-400 accent-red-500">
+                <span class="text-xs sm:text-sm text-gray-700">新增為常用簡訊</span>
+            </label>
+        </div>
+    </div>
+
+    <script>
+        const smsContent = document.getElementById('smsContent');
+        const previewOverlay = document.getElementById('previewOverlay');
+        const editorWrapper = document.getElementById('editorWrapper');
+        const charCount = document.getElementById('charCount');
+        const errorAlertContainer = document.getElementById('errorAlertContainer');
+        const templateSelect = document.getElementById('templateSelect');
+
+        // Domain whitelist and required keywords
+        const validDomains = ['liontravel', 'line.me/r/ti/p/@liontravel', 'ezfly', 'traveler'];
+        const requiredKeywords = ['雄獅', '旅天下', '日華'];
+
+        // Preset templates matching screenshots 1, 2, and 3
+        const templates = {
+            default: `雄獅貴賓您好，我是8/7-8/11中越領隊小蘇~蘇翠華,手機0958652298,幾點行前提醒 1.請準時於8/23 7:15在桃園機場第二航廈長榮航空20櫃檯後方集合. 2.護照自帶貴賓,請確認效期回程六個月以上,且無破(污)損,掉頁脫線. 3.請於出發前三日內完成填寫越南電子入境卡( PAI)網址
+https://line.me/R/ti/p/@liontravel
+範本我會放在群組內記事本供參考 4.本團群組歡迎自由以我電話搜尋,我再將各位加入.
+系統發送請勿回覆`,
+            invalid_url: `雄獅貴賓您好，我是8/7-8/11中越領隊小蘇~蘇翠華,手機0958652298,幾點行前提醒 1.請準時於8/23 7:15在桃園機場第二航廈長榮航空20櫃檯後方集合. 2.護照自帶貴賓,請確認效期回程六個月以上,且無破(污)損,掉頁脫線. 3.請於出發前三日內完成填寫越南電子入境卡( PAI)網址
+https://facebook.com/trip
+範本我會放在群組內記事本供參考 4.本團群組歡迎自由以我電話搜尋,我再將各位加入.
+系統發送請勿回覆`,
+            malformed_url: `貴賓您好，我是8/7-8/11中越領隊小蘇~蘇翠華,手機0958652298,幾點行前提醒 1.請準時於8/23 7:15在桃園機場第二航廈長榮航空20櫃檯後方集合. 2.護照自帶貴賓,請確認效期回程六個月以上,且無破(污)損,掉頁脫線. 3.請於出發前三日內完成填寫越南電子入境卡( PAI)網址
+line..me/trip
+範本我會放在群組內記事本供參考 4.本團群組歡迎自由以我電話搜尋,我再將各位加入.
+系統發送請勿回覆`
+        };
+
+        templateSelect.addEventListener('change', (e) => {
+            const val = e.target.value;
+            if (templates[val]) {
+                smsContent.value = templates[val];
+                validateAndRender();
+            }
+        });
+
+        smsContent.addEventListener('input', validateAndRender);
+        smsContent.addEventListener('scroll', () => {
+            previewOverlay.scrollTop = smsContent.scrollTop;
+        });
+
+        function validateAndRender() {
+            const text = smsContent.value;
+            
+            // 1. Character count display
+            charCount.textContent = `${text.length} / 300 字`;
+            if (text.length > 300) {
+                charCount.classList.add('text-red-500', 'font-bold');
+            } else {
+                charCount.classList.remove('text-red-500', 'font-bold');
+            }
+
+            // 2. Comprehensive URL Matching Regex
+            const urlRegex = /(https?:\/\/[^\s]+|[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)+[^\s]*)/g;
+            const foundUrls = text.match(urlRegex) || [];
+
+            let errors = [];
+            let invalidUrls = [];
+
+            foundUrls.forEach(url => {
+                const lowerUrl = url.toLowerCase();
+                const isWhitelisted = validDomains.some(domain => lowerUrl.includes(domain));
+                const isMalformed = url.includes('..');
+
+                if (!isWhitelisted || isMalformed) {
+                    invalidUrls.push(url);
+                }
+            });
+
+            if (invalidUrls.length > 0) {
+                errors.push(`網址 「${invalidUrls[0]}」 未通過公司網址規範，請移除或更換後重新送出`);
+            }
+
+            // 3. Check for mandatory brand keyword presence
+            const hasBrand = requiredKeywords.some(keyword => text.includes(keyword));
+            if (!hasBrand) {
+                errors.push(`簡訊內容需包含雄獅、旅天下、日華`);
+            }
+
+            // Highlighting editor border when errors are present
+            if (errors.length > 0) {
+                editorWrapper.classList.remove('border-gray-300');
+                editorWrapper.classList.add('border-red-400');
+            } else {
+                editorWrapper.classList.remove('border-red-400');
+                editorWrapper.classList.add('border-gray-300');
+            }
+
+            // Render Alert Banners
+            errorAlertContainer.innerHTML = '';
+            errors.forEach(errText => {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'bg-red-50 border border-red-200 text-red-500 text-xs px-3 py-2.5 rounded-xl font-medium leading-tight';
+                alertDiv.textContent = errText;
+                errorAlertContainer.appendChild(alertDiv);
+            });
+
+            // 4. Render overlay visual capsules
+            renderOverlayContent(text);
+        }
+
+        function renderOverlayContent(text) {
+            const urlRegex = /(https?:\/\/[^\s]+|[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)+[^\s]*)/g;
+            let lastIdx = 0;
+            let html = '';
+            let match;
+
+            while ((match = urlRegex.exec(text)) !== null) {
+                const url = match[0];
+                const start = match.index;
+                
+                // Text before matched URL
+                html += escapeHtml(text.substring(lastIdx, start));
+
+                const lowerUrl = url.toLowerCase();
+                const isWhitelisted = validDomains.some(domain => lowerUrl.includes(domain));
+                const isMalformed = url.includes('..');
+
+                const isValid = isWhitelisted && !isMalformed;
+
+                if (isValid) {
+                    html += `<span class="url-capsule-blue"><i class="fa-solid fa-globe text-[11px]"></i>${escapeHtml(url)}</span>`;
+                } else {
+                    html += `<span class="url-capsule-red"><i class="fa-solid fa-globe text-[11px]"></i>${escapeHtml(url)}</span>`;
+                }
+
+                lastIdx = start + url.length;
+            }
+            
+            // Trailing text
+            html += escapeHtml(text.substring(lastIdx));
+            previewOverlay.innerHTML = html;
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        // Initialize on load
+        validateAndRender();
+    </script>
+</body>
+</html>
