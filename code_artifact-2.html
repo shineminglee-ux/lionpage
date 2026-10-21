@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>動態說資：3D地圖動態導覽・行中虛實驗證</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f1f3f5;
+            color: #212529;
+            overflow-x: hidden;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 5px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f3f5;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #ced4da;
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #adb5bd;
+        }
+
+        /* Map styling to strictly match wireframe grayscale aesthetics */
+        .leaflet-container {
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            background-color: #e2e8f0; /* Clean solid gray background */
+        }
+
+        /* Hide image tile grid lines and force solid backdrop */
+        .leaflet-tile-container {
+            display: none !important;
+        }
+
+        .wireframe-marker {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #475569;
+            color: #ffffff;
+            border-radius: 50%;
+            font-weight: 700;
+            border: 2px solid #ffffff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+            transition: all 0.2s ease;
+        }
+        .wireframe-marker:hover, .wireframe-marker.active {
+            transform: scale(1.2);
+            background: #212529;
+            z-index: 1000 !important;
+        }
+
+        /* Custom Interactive Hover Effects */
+        .hover-card-effect {
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .hover-card-effect:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+            border-color: #94a3b8 !important;
+        }
+
+        /* Neutral image placeholder effect for wireframe match */
+        .wf-img-placeholder {
+            background-color: #e9ecef;
+            filter: grayscale(100%);
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col bg-slate-100 text-slate-800">
+
+    <!-- Top Global Banner Bar -->
+    <header class="bg-[#212529] text-white text-xs md:text-sm py-2 px-4 text-center font-medium shadow-sm z-50 flex justify-between items-center shrink-0">
+        <div class="w-full text-center font-semibold tracking-wide">
+            動態說資：3D地圖動態導覽、行中虛實驗證。(100% 滿版)
+        </div>
+    </header>
+
+    <!-- Navigation Bar Wireframe Style -->
+    <nav class="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between gap-2 z-40 shrink-0 shadow-xs">
+        <div class="flex items-center space-x-2 overflow-x-auto py-1 max-w-full custom-scrollbar">
+            <button onclick="changeView('overview')" id="btn-return" class="px-3 py-1.5 text-xs font-bold border border-gray-300 rounded hover:bg-gray-100 flex items-center space-x-1 shrink-0 text-gray-800">
+                <i class="fa-solid font-bold text-xs">&lt;</i>
+                <span>返回產品頁</span>
+            </button>
+
+            <button onclick="changeView('overview')" id="tab-overview" class="nav-tab px-3 py-1.5 text-xs font-bold rounded bg-[#495057] text-white shrink-0 transition">
+                行程總覽
+            </button>
+            <button onclick="changeView('day1')" id="tab-day1" class="nav-tab px-3 py-1.5 text-xs font-bold border border-gray-300 rounded text-gray-700 hover:bg-gray-100 shrink-0 transition">
+                DAY 1
+            </button>
+            <button onclick="changeView('day2')" id="tab-day2" class="nav-tab px-3 py-1.5 text-xs font-bold border border-gray-300 rounded text-gray-700 hover:bg-gray-100 shrink-0 transition">
+                DAY 2
+            </button>
+            <button onclick="changeView('day3')" id="tab-day3" class="nav-tab px-3 py-1.5 text-xs font-bold border border-gray-300 rounded text-gray-700 hover:bg-gray-100 shrink-0 transition">
+                DAY 3
+            </button>
+            <button onclick="changeView('day4')" id="tab-day4" class="nav-tab px-3 py-1.5 text-xs font-bold border border-gray-300 rounded text-gray-700 hover:bg-gray-100 shrink-0 transition">
+                DAY 4
+            </button>
+            <button onclick="changeView('day5')" id="tab-day5" class="nav-tab px-3 py-1.5 text-xs font-bold border border-gray-300 rounded text-gray-700 hover:bg-gray-100 shrink-0 transition">
+                DAY 5
+            </button>
+            <button onclick="changeView('notes')" id="tab-notes" class="nav-tab px-3 py-1.5 text-xs font-bold border border-gray-300 rounded text-gray-700 hover:bg-gray-100 shrink-0 transition">
+                參團注意事項
+            </button>
+        </div>
+
+        <div class="flex items-center space-x-2 shrink-0">
+            <button onclick="toggleStaticMode()" id="static-mode-btn" class="px-3 py-1.5 text-xs font-medium border border-gray-300 rounded hover:bg-gray-100 text-gray-700 flex items-center space-x-1 shadow-xs">
+                <span id="static-mode-text">靜態版說資</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Dynamic Split View Container -->
+    <div class="flex-1 flex flex-col md:flex-row overflow-hidden relative bg-[#f8f9fa]">
+
+        <!-- Left Content Panel Wireframe Match -->
+        <main id="left-panel" class="w-full md:w-1/2 lg:w-5/12 h-1/2 md:h-full overflow-y-auto custom-scrollbar p-3 md:p-5 space-y-4 bg-[#f8f9fa] border-r border-gray-200 transition-all duration-300">
+            
+            <!-- VIEW 1: OVERVIEW SCREEN (02_行程總覽) -->
+            <div id="view-overview" class="view-content space-y-4">
+                
+                <!-- Main Title Box -->
+                <div class="bg-white p-4 md:p-5 rounded-lg border border-gray-200 space-y-3">
+                    <div class="flex justify-between items-start">
+                        <span class="text-xs text-gray-500 font-medium">行程代號：26JFN08BRB-T (5天)</span>
+                        <div class="flex items-center space-x-1 text-gray-800 font-bold text-xs">
+                            <i class="fa-solid fa-plane text-gray-600"></i>
+                            <span>雄獅旅遊 LION TRAVEL</span>
+                        </div>
+                    </div>
+                    
+                    <h1 class="text-base md:text-lg font-bold text-gray-900 leading-snug">
+                        九州旅遊|人氣由布院之森.海之中道水族館.鶴見岳空中纜車.和牛長腳蟹吃到飽.保住雙溫泉五日
+                    </h1>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs text-gray-600">
+                        <div class="space-y-1">
+                            <p>領隊姓名：<span class="text-gray-900 font-medium">余稚昆 先生</span></p>
+                            <p>國內電話：<span class="text-gray-900 font-medium">+886 0919209324</span></p>
+                            <p>國外電話：<span class="text-gray-900 font-medium">+81 08026822518</span></p>
+                        </div>
+                        <div class="space-y-1">
+                            <p>集合時間：<span class="text-gray-900 font-medium">07/01 14:10</span></p>
+                            <p>集合地點：<span class="text-gray-900 font-medium">桃園機場 華航第二航廈 7號 櫃台</span></p>
+                            <div class="pt-1 flex items-center space-x-2 text-[11px] text-gray-500">
+                                <i class="fa-solid fa-qrcode text-lg text-gray-700"></i>
+                                <span>意見調查表<br/>掃描QRcode回饋</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Flight Details (02 Wireframe) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
+                        <div class="bg-gray-50 p-2.5 rounded border border-gray-200">
+                            <span class="bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded text-[10px] font-bold">去程</span>
+                            <span class="font-medium text-gray-800 ml-1">07/01(三) 中華航空 CI116</span>
+                            <div class="mt-2 flex justify-between text-gray-600">
+                                <div><b class="text-gray-900">16:40</b> 桃園機場</div>
+                                <i class="fa-solid fa-angle-right self-center text-gray-400"></i>
+                                <div><b class="text-gray-900">20:00</b> 福岡機場</div>
+                            </div>
+                            <div class="text-[10px] text-gray-400 mt-1">飛行時間 02:20</div>
+                        </div>
+
+                        <div class="bg-gray-50 p-2.5 rounded border border-gray-200">
+                            <span class="bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded text-[10px] font-bold">回程</span>
+                            <span class="font-medium text-gray-800 ml-1">07/05(日) 中華航空 CI117</span>
+                            <div class="mt-2 flex justify-between text-gray-600">
+                                <div><b class="text-gray-900">22:30</b> 福岡機場</div>
+                                <i class="fa-solid fa-angle-right self-center text-gray-400"></i>
+                                <div><b class="text-gray-900">22:30</b> 桃園機場</div>
+                            </div>
+                            <div class="text-[10px] text-gray-400 mt-1">飛行時間 02:30</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5-Day Wireframe Cards Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div onclick="changeView('day1')" class="cursor-pointer bg-white p-3 rounded-lg border border-gray-200 hover-card-effect space-y-1.5">
+                        <div class="flex items-center space-x-2">
+                            <span class="bg-gray-200 text-gray-800 text-[10px] font-bold px-1.5 py-0.5 rounded">DAY 1</span>
+                            <span class="text-xs text-gray-500 font-medium">7/1(三)</span>
+                        </div>
+                        <p class="text-xs font-medium text-gray-800 leading-snug">
+                            台北 ✈ 福岡空港→福岡~自由夜訪天神中洲不夜城體驗日本屋台文化
+                        </p>
+                        <p class="text-[11px] text-gray-500 pt-1">旅館：HOTEL MONTE HERMANA FUKUOKA</p>
+                    </div>
+
+                    <div onclick="changeView('day2')" class="cursor-pointer bg-white p-3 rounded-lg border border-gray-200 hover-card-effect space-y-1.5">
+                        <div class="flex items-center space-x-2">
+                            <span class="bg-gray-200 text-gray-800 text-[10px] font-bold px-1.5 py-0.5 rounded">DAY 2</span>
+                            <span class="text-xs text-gray-500 font-medium">7/2(四)</span>
+                        </div>
+                        <p class="text-xs font-medium text-gray-800 leading-snug">
+                            搭乘由布院之森(搭乘時間約1小時)→由布院金鱗湖~湯之坪街道→別府海地獄→保住2023全新開幕~別府灣和藏溫泉飯店
+                        </p>
+                        <p class="text-[11px] text-gray-500 pt-1">旅館：GRANDVRIO HOTEL BEPPUWAN WAKURA</p>
+                    </div>
+
+                    <div onclick="changeView('day3')" class="cursor-pointer bg-white p-3 rounded-lg border border-gray-200 hover-card-effect space-y-1.5">
+                        <div class="flex items-center space-x-2">
+                            <span class="bg-gray-200 text-gray-800 text-[10px] font-bold px-1.5 py-0.5 rounded">DAY 3</span>
+                            <span class="text-xs text-gray-500 font-medium">7/3(五)</span>
+                        </div>
+                        <p class="text-xs font-medium text-gray-800 leading-snug">
+                            九州自然動物園(搭乘叢林巴士)→草千里之濱~眺望阿蘇火山之口~加贈冰淇淋→阿蘇大觀峰展望台(遠眺阿蘇五岳)→保住阿蘇格蘭溫泉飯店
+                        </p>
+                        <p class="text-[11px] text-gray-500 pt-1">旅館：ASO RESORT GRANDVRIO HOTEL - ROUTE-INN HOTELS -</p>
+                    </div>
+
+                    <div onclick="changeView('day4')" class="cursor-pointer bg-white p-3 rounded-lg border border-gray-200 hover-card-effect space-y-1.5">
+                        <div class="flex items-center space-x-2">
+                            <span class="bg-gray-200 text-gray-800 text-[10px] font-bold px-1.5 py-0.5 rounded">DAY 4</span>
+                            <span class="text-xs text-gray-500 font-medium">7/4(六)</span>
+                        </div>
+                        <p class="text-xs font-medium text-gray-800 leading-snug">
+                            熊本城(天守閣)~櫻之馬場城彩苑→柳川人力遊船→免稅店(停留約一小時)→天神商圈
+                        </p>
+                        <p class="text-[11px] text-gray-500 pt-1">旅館：HOTEL ORIENTAL EXPRESS FUKUOKA NAKASU KAWABATA</p>
+                    </div>
+
+                    <div onclick="changeView('day5')" class="cursor-pointer bg-white p-3 rounded-lg border border-gray-200 hover-card-effect space-y-1.5 sm:col-span-2">
+                        <div class="flex items-center space-x-2">
+                            <span class="bg-gray-200 text-gray-800 text-[10px] font-bold px-1.5 py-0.5 rounded">DAY 5</span>
+                            <span class="text-xs text-gray-500 font-medium">7/5(日)</span>
+                        </div>
+                        <p class="text-xs font-medium text-gray-800 leading-snug">
+                            海之中道MARINE WORLD水族館→太宰府天滿宮~品嚐必吃點心梅枝餅→福岡LaLaport購物中心1:1 鋼彈超人→福岡空港 ✈ 台北
+                        </p>
+                        <p class="text-[11px] text-gray-500 pt-1">旅館：溫暖的家</p>
+                    </div>
+                </div>
+
+                <!-- Wireframe Banner Ad Card -->
+                <div class="bg-gradient-to-r from-gray-200 to-gray-300 rounded-lg border border-gray-300 p-6 flex items-center justify-between">
+                    <div>
+                        <div class="text-xl md:text-2xl font-bold text-gray-500 tracking-wider">買國內外</div>
+                        <div class="text-sm font-semibold text-gray-600 mt-1">行程 / 機票 / 住宿 加購高鐵享優惠</div>
+                    </div>
+                    <i class="fa-solid fa-train-subway text-4xl text-gray-400"></i>
+                </div>
+
+            </div>
+
+            <!-- VIEW 2: DAILY ITINERARY SCREEN (03_每日行程) -->
+            <div id="view-daily" class="view-content hidden space-y-4">
+                <!-- Banner Title Block -->
+                <div class="bg-white p-4 rounded-lg border border-gray-200 space-y-3">
+                    <div class="flex items-center space-x-2">
+                        <span id="daily-tag" class="bg-gray-200 text-gray-800 text-xs font-bold px-2 py-0.5 rounded">DAY 1</span>
+                        <span id="daily-date" class="text-xs font-semibold text-gray-600">7/1(三)</span>
+                    </div>
+
+                    <h2 id="daily-title" class="text-base font-bold text-gray-900 leading-snug">
+                        台北 ✈ 福岡空港→福岡~自由夜訪天神中洲不夜城體驗日本屋台文化
+                    </h2>
+
+                    <div id="daily-desc" class="text-xs text-gray-600 space-y-1">
+                        ★九州自然野生動物園～叢林巴士探險～餵食動物設定為3-5人共用一盒★<br/>
+                        【特別說明】<br/>
+                        ※如遇天候變化或維修等不可抗力因素，導致纜車停駛，將改至參觀別府海地獄，並退費成人1000日圓、兒童不佔床600日圓（不含嬰兒），敬請諒解。<br/>
+                        ※由布院之森列車如遇定期維修、預約席滿或天候等不可抗力因素，則改搭專車前往並退團體料金：成人3000日圓、兒童不佔床1500日圓（不含嬰兒）。
+                    </div>
+
+                    <!-- Meal & Hotel Cards (03 Wireframe) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
+                        <div class="bg-gray-50 p-2.5 rounded border border-gray-200 space-y-1">
+                            <div class="flex items-start">
+                                <span class="bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded text-[10px] font-bold mr-2 shrink-0">餐食</span>
+                                <div class="text-gray-600 text-[11px] space-y-0.5">
+                                    <p>早餐：<span id="meal-breakfast">飯店內早餐</span></p>
+                                    <p>午餐：<span id="meal-lunch">溫暖的家</span></p>
+                                    <p>晚餐：<span id="meal-dinner">機上精緻簡餐</span></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-50 p-2.5 rounded border border-gray-200">
+                            <div class="flex items-start">
+                                <span class="bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded text-[10px] font-bold mr-2 shrink-0">住宿</span>
+                                <p class="text-gray-800 text-[11px] font-medium" id="hotel-name">HOTEL MONTE HERMANA FUKUOKA</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attractions Vertical Timeline Container with Continuous Line -->
+                <div class="relative pl-1 pr-1" id="attractions-container">
+                    <!-- Continuous Vertical Line spanning across all timeline cards -->
+                    <div class="absolute left-[19px] top-4 bottom-8 w-0.5 bg-gray-400 z-0"></div>
+
+                    <!-- Dynamic rendering spot for attractions -->
+                    <div class="space-y-4 relative z-10" id="attractions-list">
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 3: TOUR NOTES & IMPORTANT INFO (04_參團注意事項) -->
+            <div id="view-notes" class="view-content hidden space-y-4">
+                
+                <div class="flex flex-col lg:flex-row gap-4">
+                    <!-- Left Section: Flight, Hotels, & Policies -->
+                    <div class="flex-1 space-y-4">
+                        
+                        <!-- Flight & Header Info -->
+                        <div class="bg-white p-4 rounded-lg border border-gray-200 space-y-3">
+                            <div>
+                                <span class="text-[11px] text-gray-400 font-medium">行程代號 26JFN08BRB-T</span>
+                                <h2 class="text-sm md:text-base font-bold text-gray-900 mt-0.5 leading-snug">
+                                    九州旅遊|人氣由布院之森.海之中道水族館.鶴見岳空中纜車.和牛長腳蟹吃到飽.保住雙溫泉五日
+                                </h2>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
+                                <div class="bg-gray-50 p-2.5 rounded border border-gray-200">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded text-[10px] font-bold">去程</span>
+                                        <span class="font-medium text-gray-700">07/01(三) 中華航空 CI116</span>
+                                    </div>
+                                    <div class="mt-2 flex justify-between items-center text-gray-600">
+                                        <div><b class="text-gray-900">16:40</b> 桃園機場</div>
+                                        <i class="fa-solid fa-angle-right text-gray-400"></i>
+                                        <div><b class="text-gray-900">20:00</b> 福岡機場</div>
+                                    </div>
+                                    <div class="text-[10px] text-gray-400 mt-1">飛行時間 02:20</div>
+                                </div>
+
+                                <div class="bg-gray-50 p-2.5 rounded border border-gray-200">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded text-[10px] font-bold">回程</span>
+                                        <span class="font-medium text-gray-700">07/05(日) 中華航空 CI117</span>
+                                    </div>
+                                    <div class="mt-2 flex justify-between items-center text-gray-600">
+                                        <div><b class="text-gray-900">22:30</b> 福岡機場</div>
+                                        <i class="fa-solid fa-angle-right text-gray-400"></i>
+                                        <div><b class="text-gray-900">22:30</b> 桃園機場</div>
+                                    </div>
+                                    <div class="text-[10px] text-gray-400 mt-1">飛行時間 02:30</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 4-Day Hotel Grid (Matching Image 04) -->
+                        <div class="bg-white p-4 rounded-lg border border-gray-200 space-y-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                                <div class="bg-gray-50 p-3 rounded border border-gray-200 space-y-1">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="bg-gray-300 text-gray-700 px-1.5 py-0.5 rounded text-[10px] font-bold">DAY 1</span>
+                                        <span class="text-gray-600 text-[11px]">07/01(三) <i class="fa-solid fa-location-dot text-gray-400 ml-1"></i> FUKUOKA 福岡市-福岡縣</span>
+                                    </div>
+                                    <p class="font-bold text-gray-800 text-[11px] pt-1">HOTEL MONTE HERMANA FUKUOKA</p>
+                                    <p class="text-[10px] text-gray-500">〒810-0004 福岡縣福岡市中央區渡邊通3丁目4番24號</p>
+                                    <p class="text-[10px] text-gray-500">TEL: 81-92-7357111</p>
+                                </div>
+
+                                <div class="bg-gray-50 p-3 rounded border border-gray-200 space-y-1">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="bg-gray-300 text-gray-700 px-1.5 py-0.5 rounded text-[10px] font-bold">DAY 2</span>
+                                        <span class="text-gray-600 text-[11px]">07/02(四) <i class="fa-solid fa-location-dot text-gray-400 ml-1"></i> HIJI MACHI 日出町-大分縣</span>
+                                    </div>
+                                    <p class="font-bold text-gray-800 text-[11px] pt-1">GRANDVRIO HOTEL BEPPUWAN WAKURA</p>
+                                    <p class="text-[10px] text-gray-500">〒879-1508 大分縣速見郡日出町大神平邊1780-1</p>
+                                    <p class="text-[10px] text-gray-500">TEL: 81815052115</p>
+                                </div>
+
+                                <div class="bg-gray-50 p-3 rounded border border-gray-200 space-y-1">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="bg-gray-300 text-gray-700 px-1.5 py-0.5 rounded text-[10px] font-bold">DAY 3</span>
+                                        <span class="text-gray-600 text-[11px]">07/03(五) <i class="fa-solid fa-location-dot text-gray-400 ml-1"></i> ASO GUN 阿蘇郡-熊本縣</span>
+                                    </div>
+                                    <p class="font-bold text-gray-800 text-[11px] pt-1">ASO RESORT GRANDVRIO HOTEL - ROUTE-INN HOTELS -</p>
+                                    <p class="text-[10px] text-gray-500">〒869-2232 熊本縣阿蘇市赤水米塚溫泉</p>
+                                    <p class="text-[10px] text-gray-500">TEL: 81-967-35-2111</p>
+                                </div>
+
+                                <div class="bg-gray-50 p-3 rounded border border-gray-200 space-y-1">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="bg-gray-300 text-gray-700 px-1.5 py-0.5 rounded text-[10px] font-bold">DAY 4</span>
+                                        <span class="text-gray-600 text-[11px]">07/04(六) <i class="fa-solid fa-location-dot text-gray-400 ml-1"></i> FUKUOKA 福岡市-福岡縣</span>
+                                    </div>
+                                    <p class="font-bold text-gray-800 text-[11px] pt-1">HOTEL ORIENTAL EXPRESS FUKUOKA NAKASU KAWABATA</p>
+                                    <p class="text-[10px] text-gray-500">〒812-0025 福岡縣福岡市博多區店屋町6-26</p>
+                                    <p class="text-[10px] text-gray-500">TEL: 81-92-402-2725</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Policy Blocks Accordion / Card Style (Exact match to reference) -->
+                        <div class="space-y-3" id="policy-cards-container">
+                            <div class="bg-white p-4 rounded-lg border border-gray-200 space-y-2 policy-card">
+                                <h3 class="font-bold text-gray-800 text-xs">行程備註說明</h3>
+                                <div class="policy-content text-[11px] text-gray-600 line-clamp-4 leading-relaxed transition-all duration-300">
+                                    <ul class="space-y-1 pl-3 list-disc">
+                                        <li>本行程最低出團人數為16人(含)以上、41人(含)以下。</li>
+                                        <li>使用合法營業用綠牌車，安全有保障，親切、貼心的資深導遊為您服務。</li>
+                                        <li>日本國土交通省於令和6年4月(2024年04月1日)發布最新規定，每日行車時間不得超過10小時（以由車庫實際發車時間起計算基準），以有效防止巴士司機因疲勞駕駛所衍生之交通狀況。[資料來源：日本國土交通省]；因應國土交通省發布之巴士司機工時限制規定，若超時的司機工時的行程部分，為使團體行程順暢進行，交通工具可能會使用大眾交通工具（電車或地下鐵或短程計程車）等，敬請知悉！</li>
+                                        <li>如遇不可抗力之因素，例如天災、颱風、地震、交通中斷或觀光景點臨時休館，本公司保留變更行程、飯店、餐食之權利，並將盡力安排同等級備案，敬請見諒。</li>
+                                    </ul>
+                                </div>
+                                <button onclick="toggleCardExpand(this)" class="expand-btn text-[11px] font-bold text-slate-700 hover:text-black flex items-center space-x-1 pt-1 hidden">
+                                    <span>看更多</span>
+                                    <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200"></i>
+                                </button>
+                            </div>
+
+                            <div class="bg-white p-4 rounded-lg border border-gray-200 space-y-2 policy-card">
+                                <h3 class="font-bold text-gray-800 text-xs">房型備註說明</h3>
+                                <div class="policy-content text-[11px] text-gray-600 line-clamp-4 leading-relaxed transition-all duration-300">
+                                    <ul class="space-y-1 pl-3 list-disc">
+                                        <li>小孩不佔床（滿2歲未滿6歲）之兒童。</li>
+                                        <li>住宿飯店皆以兩人一室為主，保障您入住的品質。</li>
+                                        <li>如需求單人房，請補單人房差額費用。</li>
+                                        <li>若為一大人帶一小孩報名參團，小孩須需求加價佔床費用。</li>
+                                        <li>日本飯店房型規格多樣，同等星級飯店房型空間及床型配置可能有所差異，需求雙床房(TWIN)或一大床(DOUBLE)需視當日入住飯店配房狀況而定。</li>
+                                    </ul>
+                                </div>
+                                <button onclick="toggleCardExpand(this)" class="expand-btn text-[11px] font-bold text-slate-700 hover:text-black flex items-center space-x-1 pt-1 hidden">
+                                    <span>看更多</span>
+                                    <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200"></i>
+                                </button>
+                            </div>
+
+                            <div class="bg-white p-4 rounded-lg border border-gray-200 space-y-2 policy-card">
+                                <h3 class="font-bold text-gray-800 text-xs">台灣機場安檢規定</h3>
+                                <div class="policy-content text-[11px] text-gray-600 line-clamp-4 leading-relaxed transition-all duration-300">
+                                    <p>
+                                        出境旅客於完成報到手續及行李託運後，請至出境入口辦理安檢檢查手續。<br/>
+                                        旅客隨身攜帶液體容器，請儘可能撕去標籤或密封塑膠袋，並將身上之金屬物品取下置入塑膠袋，將其與隨身行李一同置入X光檢查儀。<br/>
+                                        • 下列物品絕對禁止放置於手提行李中（包含隨身手提、托運）：<br/>
+                                        • 違反行程中各地方政府規定者，禁止放置於行李中。<br/>
+                                        • 隨身攜帶之液體、膠狀及噴霧類物品，容器體積不可超過100毫升，並需裝於1公升容量以下且可重複密封之透明塑膠袋內，每位旅客限帶一個。
+                                    </p>
+                                </div>
+                                <button onclick="toggleCardExpand(this)" class="expand-btn text-[11px] font-bold text-slate-700 hover:text-black flex items-center space-x-1 pt-1 hidden">
+                                    <span>看更多</span>
+                                    <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200"></i>
+                                </button>
+                            </div>
+
+                            <div class="bg-white p-4 rounded-lg border border-gray-200 space-y-2 policy-card">
+                                <h3 class="font-bold text-gray-800 text-xs">安全守則</h3>
+                                <div class="policy-content text-[11px] text-gray-600 line-clamp-4 leading-relaxed transition-all duration-300">
+                                    <p>
+                                        為了您在本次旅途中身心的安全，我們特別提醒您遵守下列事項，這是我們應盡告知的責任，也是保障您的權益～<br/>
+                                        ◆特殊旅客參團注意事項◆<br/>
+                                        若有行動不便、慢性疾病、年滿70歲以上之貴賓，請主動告知。為考量旅客自身之旅遊安全及行程順暢度，領隊及同行團員其他人員之照顧督促，行動不便之貴賓，需與能獨立照顧之家人或友人同行，並經公司評估，方始接受報名。若報名付款後金額時尚未告知，將收取相關必要費用，敬請見諒...
+                                    </p>
+                                </div>
+                                <button onclick="toggleCardExpand(this)" class="expand-btn text-[11px] font-bold text-slate-700 hover:text-black flex items-center space-x-1 pt-1 hidden">
+                                    <span>看更多</span>
+                                    <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200"></i>
+                                </button>
+                            </div>
+
+                            <div class="bg-white p-4 rounded-lg border border-gray-200 space-y-2 policy-card">
+                                <h3 class="font-bold text-gray-800 text-xs">小費</h3>
+                                <div class="policy-content text-[11px] text-gray-600 line-clamp-4 leading-relaxed transition-all duration-300">
+                                    <p>
+                                        公司建議：<br/>
+                                        1. 日本團隊導遊、司機、領隊每日新台幣:300元(如有特殊團型會另行備註)<br/>
+                                        2. 琉球團隊導遊、司機、領隊每日新台幣:300元(如有特殊團型會另行備註)<br/>
+                                        3. 床頭床單放置小費，房間吧台上零食及冰箱小瓶酒、飲料等取用請自行登記至櫃台結帳。但茶包則為免費。
+                                    </p>
+                                </div>
+                                <button onclick="toggleCardExpand(this)" class="expand-btn text-[11px] font-bold text-slate-700 hover:text-black flex items-center space-x-1 pt-1 hidden">
+                                    <span>看更多</span>
+                                    <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200"></i>
+                                </button>
+                            </div>
+
+                            <div class="bg-white p-4 rounded-lg border border-gray-200 space-y-2 policy-card">
+                                <h3 class="font-bold text-gray-800 text-xs">電話</h3>
+                                <div class="policy-content text-[11px] text-gray-600 line-clamp-4 leading-relaxed transition-all duration-300">
+                                    <p>
+                                        從日本打電話回台灣：國碼010+886+區域碼(去0)+電話號碼<br/>
+                                        從台灣打電話去日本：國碼002+81+區域碼(去0)+電話號碼<br/>
+                                        如有緊急電話聯絡需求，亦可隨時透過通訊軟體聯繫領隊或雄獅緊急應變聯絡中心。
+                                    </p>
+                                </div>
+                                <button onclick="toggleCardExpand(this)" class="expand-btn text-[11px] font-bold text-slate-700 hover:text-black flex items-center space-x-1 pt-1 hidden">
+                                    <span>看更多</span>
+                                    <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200"></i>
+                                </button>
+                            </div>
+
+                            <div class="bg-white p-4 rounded-lg border border-gray-200 space-y-2 policy-card">
+                                <h3 class="font-bold text-gray-800 text-xs">保險</h3>
+                                <div class="policy-content text-[11px] text-gray-600 line-clamp-4 leading-relaxed transition-all duration-300">
+                                    <p>
+                                        1. 本行程包含旅行業責任保險【意外身亡保額新臺幣250萬、意外醫療保額新臺幣10萬 (實支實付)】及旅行社履約保險。<br/>
+                                        *旅客未滿15歲或70歲以上，依保險公司規定最高【意外身亡保額新臺幣250萬元、意外醫療保額新臺幣10萬 (實支實付)】<br/>
+                                        2. 依「旅遊定型化契約」中規定，本公司有告知旅客自行投保旅行平安保險之義務。因此，為了確保您的權益及避免出國期間可能發生的風險，特別提醒您購買旅遊平安保險及旅遊不便險。
+                                    </p>
+                                </div>
+                                <button onclick="toggleCardExpand(this)" class="expand-btn text-[11px] font-bold text-slate-700 hover:text-black flex items-center space-x-1 pt-1 hidden">
+                                    <span>看更多</span>
+                                    <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200"></i>
+                                </button>
+                            </div>
+
+                            <div class="bg-white p-4 rounded-lg border border-gray-200 space-y-2 policy-card">
+                                <h3 class="font-bold text-gray-800 text-xs">脫隊規定</h3>
+                                <div class="policy-content text-[11px] text-gray-600 line-clamp-4 leading-relaxed transition-all duration-300">
+                                    <p>
+                                        【中華航空公司】<br/>
+                                        一、【機位加價升等商務艙規定】<br/>
+                                        1. 團體機票規定:機位不接受加價升等商務艙。如需商務艙，請自行開立【個人機票】。<br/>
+                                        二、【行李規定】託運行李相關規定請依照中華航空官網公佈為準，超重部分費用須由旅客自理。
+                                    </p>
+                                </div>
+                                <button onclick="toggleCardExpand(this)" class="expand-btn text-[11px] font-bold text-slate-700 hover:text-black flex items-center space-x-1 pt-1 hidden">
+                                    <span>看更多</span>
+                                    <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Right Sidebar Info (Matching Right Side in Reference Image 04) -->
+                    <div class="w-full lg:w-80 space-y-4 shrink-0">
+                        
+                        <!-- Lion Travel Logo Badge -->
+                        <div class="flex justify-start lg:justify-end items-center space-x-1.5 text-gray-800 font-bold text-xs pb-1">
+                            <i class="fa-solid fa-plane text-gray-600"></i>
+                            <span>雄獅旅遊 LION TRAVEL</span>
+                        </div>
+
+                        <!-- Leader Info Box -->
+                        <div class="bg-white p-3.5 rounded-lg border border-gray-200 space-y-2 text-xs">
+                            <h3 class="font-bold text-gray-900 border-b border-gray-100 pb-1.5">領隊資訊</h3>
+                            <div class="space-y-1 text-[11px] text-gray-600">
+                                <p>領隊姓名：<span class="text-gray-900 font-medium">余稚昆 先生</span></p>
+                                <p>國內電話：<span class="text-gray-900 font-medium">+886 0919209324</span></p>
+                                <p>國外電話：<span class="text-gray-900 font-medium">+81 08026822518</span></p>
+                            </div>
+                        </div>
+
+                        <!-- Departure & Meeting Info Box -->
+                        <div class="bg-white p-3.5 rounded-lg border border-gray-200 space-y-2 text-xs">
+                            <h3 class="font-bold text-gray-900 border-b border-gray-100 pb-1.5">集合地點</h3>
+                            <div class="space-y-1.5 text-[11px] text-gray-600">
+                                <p>集合時間：<span class="text-gray-900 font-medium">07/01 14:10</span></p>
+                                <p>集合地點：<span class="text-gray-900 font-medium">桃園機場 華航第二航廈 7號 櫃台</span></p>
+                                <p>航空公司電話：<span class="text-gray-900 font-medium">886-3-3982451</span></p>
+                                <div class="pt-1 text-[10px] text-gray-500 space-y-0.5 border-t border-gray-100">
+                                    <p>送機人員電話：</p>
+                                    <p class="pl-2">台灣桃園國際機場第一航廈 0921-809-206</p>
+                                    <p class="pl-2">台灣桃園國際機場第二航廈 0921-809-207</p>
+                                    <p class="pl-2">台北松山機場 0911-808-499</p>
+                                    <p class="pl-2">高雄小港機場 0978-506-677</p>
+                                </div>
+                                <p class="text-[10px] text-gray-400 pt-1 leading-snug">
+                                    「若聯繫不上送機人員時，請改撥緊急調度聯絡電話 桃園/松山機場 0932-365-795」
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Feedback QR Box -->
+                        <div class="bg-white p-3.5 rounded-lg border border-gray-200 flex items-center space-x-3">
+                            <i class="fa-solid fa-qrcode text-3xl text-gray-700"></i>
+                            <div class="text-[11px] text-gray-600">
+                                <p class="font-bold text-gray-800">意見調查表</p>
+                                <p class="text-gray-500">掃描QRcode回饋</p>
+                            </div>
+                        </div>
+
+                        <!-- JetFi Wi-Fi Ads Banner Box 1 -->
+                        <div class="bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg p-4 text-white space-y-2 shadow-xs relative overflow-hidden">
+                            <div class="flex justify-between items-start z-10 relative">
+                                <div>
+                                    <span class="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">NEW 新品上市</span>
+                                    <h4 class="font-extrabold text-sm mt-1">JetFi Mobile 飆速 5G</h4>
+                                    <p class="text-[10px] opacity-90">Wi-Fi 分享器</p>
+                                </div>
+                            </div>
+                            <div class="bg-white/20 backdrop-blur-xs rounded p-2 text-center text-xs font-bold">
+                                雙人同行 一人一天只要 92元起！
+                            </div>
+                            <div class="flex justify-between items-center text-[10px] pt-1 border-t border-white/20">
+                                <span>加購 SIM 卡特惠 $199起</span>
+                                <span class="bg-white text-blue-600 px-2 py-0.5 rounded font-bold">立即下單</span>
+                            </div>
+                        </div>
+
+                        <!-- JetFi eSIM Ads Banner Box 2 -->
+                        <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-lg p-4 text-white space-y-2 shadow-xs relative overflow-hidden">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <span class="bg-amber-400 text-slate-900 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">免費體驗</span>
+                                    <h4 class="font-extrabold text-sm mt-1">全球52國 1GB eSIM</h4>
+                                </div>
+                            </div>
+                            <div class="text-[10px] text-slate-300">
+                                專屬eSIM輸入代碼 75折優惠券
+                            </div>
+                            <div class="bg-slate-700/60 p-1.5 rounded flex justify-between items-center text-[10px]">
+                                <span>兌換碼：ITF25</span>
+                                <span class="bg-amber-400 text-slate-900 px-2 py-0.5 rounded font-bold">立即下載</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+        </main>
+
+        <!-- Right Interactive Map View Container -->
+        <section id="right-panel" class="w-full md:w-1/2 lg:w-7/12 h-1/2 md:h-full relative bg-gray-200 flex flex-col justify-center items-center transition-all duration-300">
+            
+            <!-- Leaflet Grayscale Map Container -->
+            <div id="map" class="w-full h-full"></div>
+
+            <!-- Wireframe Dynamic Map Visual Text Overlay -->
+            <div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center z-20 text-center p-4">
+                <div class="bg-white/80 backdrop-blur-xs px-6 py-4 rounded-xl border border-gray-300 shadow-xs">
+                    <span class="text-xl md:text-2xl font-black text-gray-400 tracking-widest block">MAP</span>
+                    <span class="text-xs md:text-sm font-semibold text-gray-500 mt-1 block" id="wireframe-map-subtext">依據景點移動</span>
+                </div>
+            </div>
+
+            <!-- Current Focus Location Floating Badge -->
+            <div class="absolute bottom-4 left-4 right-4 md:left-auto md:right-4 z-30 bg-white/95 backdrop-blur-md p-3 rounded-lg shadow-md border border-gray-200 max-w-xs">
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-xs font-bold text-gray-800" id="current-location-title">九州全區總覽</span>
+                    <span class="text-[10px] bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded font-bold" id="current-location-tag">導覽中</span>
+                </div>
+                <p class="text-[11px] text-gray-500 line-clamp-2" id="current-location-desc">
+                    點擊左側景點卡片或地圖上的標籤以切換焦點。
+                </p>
+            </div>
+
+        </section>
+
+    </div>
+
+    <!-- Loading Screen Overlay (01_載入頁 Wireframe Match) -->
+    <div id="loading-overlay" class="fixed inset-0 bg-[#343a40] z-50 flex flex-col items-center justify-center p-4 text-center transition-opacity duration-300 opacity-100">
+        <div class="bg-white p-8 rounded-lg shadow-xl max-w-sm w-full space-y-4 border border-gray-100">
+            
+            <!-- Minimalist Spinner -->
+            <div class="w-10 h-10 border-4 border-gray-200 border-t-red-400 rounded-full animate-spin mx-auto"></div>
+
+            <div class="space-y-1">
+                <h3 class="text-sm font-bold text-gray-800">說資載入中，請稍等</h3>
+                <p class="text-[11px] text-gray-400">連線中，請勿關閉視窗！</p>
+            </div>
+
+            <div class="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
+                <div id="loading-bar" class="bg-gray-600 h-full w-0 transition-all duration-200"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Engine -->
+    <script>
+        const tourData = {
+            day1: {
+                tag: "DAY 1",
+                date: "7/1(三)",
+                title: "台北 ✈ 福岡空港→福岡~自由夜訪天神中洲不夜城體驗日本屋台文化",
+                desc: "★特別說明：本日抵達福岡後安排專車前往飯店入住，隨後可自由體驗福岡在地夜間文化與熱鬧的屋台攤販。",
+                breakfast: "飯店內早餐",
+                lunch: "溫暖的家",
+                dinner: "機上精緻簡餐",
+                hotel: "HOTEL MONTE HERMANA FUKUOKA",
+                center: [33.5902, 130.4017],
+                zoom: 13,
+                attractions: [
+                    {
+                        id: "d1_1",
+                        name: "九州自然野生動物園",
+                        tag: "特別安排",
+                        time: "1小時30分",
+                        desc: "一生能有幾次機會近距離觀看野生猛獸之外，還能親自餵食，在寬廣的自然環境中，有1400隻，共70種的動物悠閒地棲息在此，是日本最大的野生動物園區。",
+                        lat: 33.3392,
+                        lng: 131.3850
+                    },
+                    {
+                        id: "d1_2",
+                        name: "櫻花馬場城彩苑",
+                        tag: "特別安排",
+                        time: "1小時30分",
+                        desc: "坐落在熊本縣熊本市內的櫻花馬場城彩苑為熊本城下一處結合歷史文化與觀光遊憩的景點。城彩苑打造仿古街道重現往昔城下町風光，營造濃厚的江戶風情。",
+                        lat: 32.8062,
+                        lng: 130.7058
+                    },
+                    {
+                        id: "d1_3",
+                        name: "柳川遊船",
+                        tag: "特別安排",
+                        time: "1小時30分",
+                        desc: "福岡縣柳川市是日本著名的水鄉，而「柳川遊船」更可謂此處的觀光代名詞。過去藩政時期在柳川築城掘濠，而今不但留下了錯綜綿延的運河水道，還有古樸的白壁建築與磚造倉庫。",
+                        lat: 33.1670,
+                        lng: 130.4080
+                    },
+                    {
+                        id: "d1_4",
+                        name: "HOTEL MONTE HERMANA FUKUOKA",
+                        tag: "飯店住宿",
+                        time: "住宿過夜",
+                        desc: "〒810-0004 福岡縣福岡市中央區渡邊通3丁目4番24號\nTEL: 81-92-7357111",
+                        lat: 33.5862,
+                        lng: 130.4042
+                    }
+                ]
+            },
+            day2: {
+                tag: "DAY 2",
+                date: "7/2(四)",
+                title: "搭乘由布院之森(搭乘時間約1小時)→由布院金鱗湖~湯之坪街道→別府海地獄→保住2023全新開幕~別府灣和藏溫泉飯店",
+                desc: "★特別說明：如遇天候變化或維修等不可抗力因素導致列車停駛，將以遊覽車替代並退費。",
+                breakfast: "飯店內早餐",
+                lunch: "由布院日式風味餐",
+                dinner: "溫泉飯店總匯自助餐",
+                hotel: "GRANDVRIO HOTEL BEPPUWAN WAKURA",
+                center: [33.2800, 131.4500],
+                zoom: 11,
+                attractions: [
+                    {
+                        id: "d2_1",
+                        name: "由布院之森觀光列車",
+                        tag: "特別安排",
+                        time: "搭乘約1小時",
+                        desc: "經典典雅的高原觀光列車，車廂內全木質裝潢，沿途欣賞大自然翠綠風光。",
+                        lat: 33.2628,
+                        lng: 131.3562
+                    },
+                    {
+                        id: "d2_2",
+                        name: "由布院金鱗湖 & 湯之坪街道",
+                        tag: "熱門景點",
+                        time: "停留 2.5小時",
+                        desc: "湖底同時湧出溫泉與清水，清晨時分霧氣繚繞美不勝收；湯之坪街道充滿特色小店。",
+                        lat: 33.2665,
+                        lng: 131.3615
+                    },
+                    {
+                        id: "d2_3",
+                        name: "別府海地獄",
+                        tag: "自然奇景",
+                        time: "停留 1小時",
+                        desc: "別府七大地獄溫泉中規模最大者，泉水呈現如湛藍大海般的鈷藍色。",
+                        lat: 33.3158,
+                        lng: 131.4689
+                    }
+                ]
+            },
+            day3: {
+                tag: "DAY 3",
+                date: "7/3(五)",
+                title: "九州自然動物園(搭乘叢林巴士)→草千里之濱~眺望阿蘇火山之口~加贈冰淇淋→阿蘇大觀峰展望台→保住阿蘇格蘭溫泉飯店",
+                desc: "★特別說明：九州自然野生動物園叢林巴士包含餵食體驗，廣闊自然環境中近距離觀賞野生動物。",
+                breakfast: "飯店內早餐",
+                lunch: "阿蘇赤牛料理定食",
+                dinner: "和牛長腳蟹吃到飽百匯",
+                hotel: "ASO RESORT GRANDVRIO HOTEL",
+                center: [32.9500, 131.1000],
+                zoom: 11,
+                attractions: [
+                    {
+                        id: "d3_1",
+                        name: "草千里之濱",
+                        tag: "自然景觀",
+                        time: "停留 1.5小時",
+                        desc: "夾在阿蘇五岳之間的廣袤綠色草原，可遠眺噴煙的阿蘇中岳火山。",
+                        lat: 32.8850,
+                        lng: 131.0520
+                    },
+                    {
+                        id: "d3_2",
+                        name: "阿蘇大觀峰展望台",
+                        tag: "絕景展望",
+                        time: "停留 1小時",
+                        desc: "內牧溫泉東北方的最高峰，俯瞰阿蘇谷及阿蘇五岳雄偉的全景視角。",
+                        lat: 33.0117,
+                        lng: 131.0825
+                    }
+                ]
+            },
+            day4: {
+                tag: "DAY 4",
+                date: "7/4(六)",
+                title: "熊本城(天守閣)~櫻之馬場城彩苑→柳川人力遊船→免稅店→天神商圈",
+                desc: "★特別說明：熊本城天守閣內部已完成全數修復，展示豐富歷史文物與現代互動裝置。",
+                breakfast: "飯店內早餐",
+                lunch: "柳川鰻魚飯特色料理",
+                dinner: "方便逛街敬請自理",
+                hotel: "HOTEL ORIENTAL EXPRESS FUKUOKA NAKASU KAWABATA",
+                center: [32.9000, 130.5000],
+                zoom: 10,
+                attractions: [
+                    {
+                        id: "d4_1",
+                        name: "熊本城天守閣",
+                        tag: "名城巡禮",
+                        time: "停留 2小時",
+                        desc: "日本三大名城之一，天守閣重現江戶時代歷史文物。",
+                        lat: 32.8062,
+                        lng: 130.7058
+                    },
+                    {
+                        id: "d4_2",
+                        name: "天神商圈",
+                        tag: "購物血拼",
+                        time: "停留 2.5小時",
+                        desc: "九州最繁華的購物商業區，百貨公司與地下街林立。",
+                        lat: 33.5900,
+                        lng: 130.3990
+                    }
+                ]
+            },
+            day5: {
+                tag: "DAY 5",
+                date: "7/5(日)",
+                title: "海之中道MARINE WORLD水族館→太宰府天滿宮~品嚐必吃點心梅枝餅→福岡LaLaport購物中心1:1鋼彈超人→福岡空港 ✈ 台北",
+                desc: "★特別說明：整理行囊前往機場準備返回台北。",
+                breakfast: "飯店內早餐",
+                lunch: "太宰府特色風味餐",
+                dinner: "機上精緻簡餐",
+                hotel: "溫暖的家",
+                center: [33.6000, 130.4500],
+                zoom: 11,
+                attractions: [
+                    {
+                        id: "d5_1",
+                        name: "海之中道 MARINE WORLD 水族館",
+                        tag: "熱門景點",
+                        time: "停留 2小時",
+                        desc: "對馬暖流為主題的大型水族館，欣賞精彩的海豚海獅表演。",
+                        lat: 33.6600,
+                        lng: 130.3620
+                    },
+                    {
+                        id: "d5_2",
+                        name: "太宰府天滿宮",
+                        tag: "歷史神社",
+                        time: "停留 1.5小時",
+                        desc: "祭祀學問之神菅原道真的總本宮，參道上現烤梅枝餅香氣四溢。",
+                        lat: 33.5215,
+                        lng: 130.5348
+                    }
+                ]
+            }
+        };
+
+        let currentView = 'overview';
+        let isStaticMode = false;
+        let map;
+        let markersGroup;
+        let polylineGroup;
+
+        function initMap() {
+            if (map) return;
+            
+            const mapContainer = document.getElementById('map');
+            if (!mapContainer) return;
+
+            map = L.map('map', {
+                zoomControl: true,
+                attributionControl: false
+            }).setView([33.4, 130.8], 9);
+
+            // Clean background for Leaflet
+            L.tileLayer('', {
+                maxZoom: 18
+            }).addTo(map);
+
+            markersGroup = L.layerGroup().addTo(map);
+            polylineGroup = L.layerGroup().addTo(map);
+
+            renderMapForOverview();
+        }
+
+        function renderMapForOverview() {
+            if (!map || !markersGroup || !polylineGroup) return;
+
+            markersGroup.clearLayers();
+            polylineGroup.clearLayers();
+
+            const allPoints = [];
+            let counter = 1;
+
+            ['day1', 'day2', 'day3', 'day4', 'day5'].forEach(dayKey => {
+                const dayData = tourData[dayKey];
+                if (dayData && dayData.attractions) {
+                    dayData.attractions.forEach(attr => {
+                        const latLng = [attr.lat, attr.lng];
+                        allPoints.push(latLng);
+
+                        const customIcon = L.divIcon({
+                            className: 'wireframe-marker',
+                            html: `<span>${counter}</span>`,
+                            iconSize: [28, 28],
+                            iconAnchor: [14, 14]
+                        });
+
+                        const marker = L.marker(latLng, { icon: customIcon });
+                        marker.bindPopup(`<b>${attr.name}</b><br/>${attr.tag}`);
+                        markersGroup.addLayer(marker);
+                        counter++;
+                    });
+                }
+            });
+
+            if (allPoints.length > 0) {
+                const polyline = L.polyline(allPoints, {
+                    color: '#475569',
+                    weight: 3,
+                    opacity: 0.8,
+                    dashArray: '6, 6'
+                });
+                polylineGroup.addLayer(polyline);
+                map.fitBounds(polyline.getBounds(), { padding: [30, 30] });
+            }
+
+            document.getElementById('current-location-title').innerText = "九州全區總覽";
+            document.getElementById('current-location-tag').innerText = "行程總覽";
+            document.getElementById('current-location-desc').innerText = "展示 5 天全行程之景點路線與位置。";
+            document.getElementById('wireframe-map-subtext').innerText = "全區行程景點導覽軌跡";
+        }
+
+        function renderDailyView(dayKey) {
+            const dayData = tourData[dayKey];
+            if (!dayData) return;
+
+            // Update Text Information
+            document.getElementById('daily-tag').innerText = dayData.tag;
+            document.getElementById('daily-date').innerText = dayData.date;
+            document.getElementById('daily-title').innerText = dayData.title;
+            document.getElementById('daily-desc').innerHTML = dayData.desc;
+            document.getElementById('meal-breakfast').innerText = dayData.breakfast;
+            document.getElementById('meal-lunch').innerText = dayData.lunch;
+            document.getElementById('meal-dinner').innerText = dayData.dinner;
+            document.getElementById('hotel-name').innerText = dayData.hotel;
+
+            // Render Attraction Timeline List
+            const listContainer = document.getElementById('attractions-list');
+            listContainer.innerHTML = '';
+
+            dayData.attractions.forEach((attr, idx) => {
+                const card = document.createElement('div');
+                card.className = "flex items-start space-x-3 bg-white p-3 md:p-4 rounded-lg border border-gray-200 hover-card-effect relative z-10";
+                
+                card.innerHTML = `
+                    <div class="flex-shrink-0 w-8 h-8 bg-slate-700 text-white rounded-full flex items-center justify-center font-bold text-xs shadow-xs border-2 border-white z-10">
+                        ${idx + 1}
+                    </div>
+                    <div class="flex-1 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="bg-gray-100 text-gray-700 text-[10px] font-bold px-2 py-0.5 rounded">${attr.tag}</span>
+                            <span class="text-[11px] text-gray-500"><i class="fa-regular fa-clock mr-1"></i>${attr.time}</span>
+                        </div>
+                        <h3 class="font-bold text-sm text-gray-800">${attr.name}</h3>
+                        <p class="text-xs text-gray-600 leading-relaxed">${attr.desc}</p>
+                        <div class="pt-1 flex justify-end">
+                            <button onclick="focusAttraction(${attr.lat}, ${attr.lng}, '${attr.name.replace(/'/g, "\\'")}')" class="text-xs text-slate-700 font-bold hover:text-black flex items-center space-x-1">
+                                <i class="fa-solid fa-location-dot text-xs"></i>
+                                <span>在地圖中查看</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                listContainer.appendChild(card);
+            });
+
+            // Update Map for Daily View
+            if (map && markersGroup && polylineGroup) {
+                markersGroup.clearLayers();
+                polylineGroup.clearLayers();
+
+                const points = [];
+                dayData.attractions.forEach((attr, idx) => {
+                    const latLng = [attr.lat, attr.lng];
+                    points.push(latLng);
+
+                    const customIcon = L.divIcon({
+                        className: 'wireframe-marker',
+                        html: `<span>${idx + 1}</span>`,
+                        iconSize: [28, 28],
+                        iconAnchor: [14, 14]
+                    });
+
+                    const marker = L.marker(latLng, { icon: customIcon });
+                    marker.bindPopup(`<b>${attr.name}</b><br/>${attr.tag}`);
+                    markersGroup.addLayer(marker);
+                });
+
+                if (points.length > 0) {
+                    const polyline = L.polyline(points, {
+                        color: '#334155',
+                        weight: 4,
+                        opacity: 0.9
+                    });
+                    polylineGroup.addLayer(polyline);
+                    map.fitBounds(polyline.getBounds(), { padding: [40, 40] });
+                }
+
+                document.getElementById('current-location-title').innerText = `${dayData.tag} - ${dayData.date}`;
+                document.getElementById('current-location-tag').innerText = "當日行程";
+                document.getElementById('current-location-desc').innerText = dayData.title;
+                document.getElementById('wireframe-map-subtext').innerText = `${dayData.tag} 路線圖`;
+            }
+        }
+
+        function focusAttraction(lat, lng, name) {
+            if (!map) return;
+            map.flyTo([lat, lng], 14, { duration: 1.2 });
+            document.getElementById('current-location-title').innerText = name;
+            document.getElementById('current-location-tag').innerText = "聚焦景點";
+        }
+
+        function simulateLoading() {
+            const overlay = document.getElementById('loading-overlay');
+            const bar = document.getElementById('loading-bar');
+            if (!overlay || !bar) return;
+
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 25;
+                bar.style.width = progress + '%';
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        overlay.classList.add('opacity-0');
+                        setTimeout(() => {
+                            overlay.classList.add('hidden');
+                        }, 300);
+                    }, 200);
+                }
+            }, 100);
+        }
+
+        window.addEventListener('load', () => {
+            simulateLoading();
+            initMap();
+            checkPolicyCardsOverflow();
+        });
+
+        function checkPolicyCardsOverflow() {
+            // Check each policy card to see if text exceeds 4 lines (line-height * 4)
+            const policyCards = document.querySelectorAll('.policy-card');
+            policyCards.forEach(card => {
+                const content = card.querySelector('.policy-content');
+                const btn = card.querySelector('.expand-btn');
+                if (content && btn) {
+                    // Check if content scrollHeight is greater than clientHeight
+                    if (content.scrollHeight > content.clientHeight + 2) {
+                        btn.classList.remove('hidden');
+                    } else {
+                        btn.classList.add('hidden');
+                    }
+                }
+            });
+        }
+
+        function toggleCardExpand(btn) {
+            const card = btn.closest('.policy-card');
+            const content = card.querySelector('.policy-content');
+            const icon = btn.querySelector('i');
+            const label = btn.querySelector('span');
+
+            if (content.classList.contains('line-clamp-4')) {
+                content.classList.remove('line-clamp-4');
+                label.innerText = '收合資訊';
+                icon.classList.add('rotate-180');
+            } else {
+                content.classList.add('line-clamp-4');
+                label.innerText = '看更多';
+                icon.classList.remove('rotate-180');
+            }
+        }
+
+        function changeView(viewKey) {
+            currentView = viewKey;
+
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('bg-[#495057]', 'text-white');
+                tab.classList.add('text-gray-700', 'border', 'border-gray-300');
+            });
+
+            const activeTab = document.getElementById(`tab-${viewKey}`);
+            if (activeTab) {
+                activeTab.classList.remove('text-gray-700', 'border', 'border-gray-300');
+                activeTab.classList.add('bg-[#495057]', 'text-white');
+            }
+
+            document.querySelectorAll('.view-content').forEach(view => {
+                view.classList.add('hidden');
+            });
+
+            const leftPanel = document.getElementById('left-panel');
+            const rightPanel = document.getElementById('right-panel');
+
+            if (viewKey === 'overview') {
+                leftPanel.className = "w-full md:w-1/2 lg:w-5/12 h-1/2 md:h-full overflow-y-auto custom-scrollbar p-3 md:p-5 space-y-4 bg-[#f8f9fa] border-r border-gray-200 transition-all duration-300";
+                rightPanel.classList.remove('hidden');
+                document.getElementById('view-overview').classList.remove('hidden');
+                renderMapForOverview();
+            } else if (viewKey === 'notes') {
+                // Hide map and extend content to 100% full width
+                leftPanel.className = "w-full h-full overflow-y-auto custom-scrollbar p-4 md:p-6 space-y-4 bg-[#f8f9fa] transition-all duration-300 max-w-7xl mx-auto";
+                rightPanel.classList.add('hidden');
+                document.getElementById('view-notes').classList.remove('hidden');
+                setTimeout(checkPolicyCardsOverflow, 100);
+            } else if (tourData[viewKey]) {
+                leftPanel.className = "w-full md:w-1/2 lg:w-5/12 h-1/2 md:h-full overflow-y-auto custom-scrollbar p-3 md:p-5 space-y-4 bg-[#f8f9fa] border-r border-gray-200 transition-all duration-300";
+                rightPanel.classList.remove('hidden');
+                document.getElementById('view-daily').classList.remove('hidden');
+                renderDailyView(viewKey);
+            }
+
+            document.getElementById('left-panel').scrollTop = 0;
+            if (map && !rightPanel.classList.contains('hidden')) {
+                setTimeout(() => map.invalidateSize(), 300);
+            }
+        }
+
+        function toggleStaticMode() {
+            isStaticMode = !isStaticMode;
+            const btnText = document.getElementById('static-mode-text');
+            if (isStaticMode) {
+                btnText.innerText = "動態版說資";
+                alert("已切換至靜態模式（預覽模式）");
+            } else {
+                btnText.innerText = "靜態版說資";
+                alert("已切換至動態互動模式");
+            }
+        }
+    </script>
+</body>
+</html>
