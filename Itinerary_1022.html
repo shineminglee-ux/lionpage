@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>九州旅遊|人氣由布院之森.海之中道水族館.鶴見岳空中纜車.和牛長腳蟹吃到飽.保住雙溫泉五日 - 動態說資</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f3f4f6;
+            color: #333;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .spinner {
+            border: 4px solid rgba(239, 68, 68, 0.1);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border-left-color: #ef4444;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 隱藏 M 版滾動條但維持滾動功能 */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        .map-container {
+            position: relative;
+            background-color: #f1f5f9;
+            overflow: hidden;
+        }
+
+        .tab-active {
+            background-color: #374151 !important;
+            color: #ffffff !important;
+            border-color: #374151 !important;
+        }
+
+        .map-card-pulse {
+            animation: cardPulse 0.6s ease-in-out;
+        }
+
+        @keyframes cardPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .spot-card-highlight {
+            animation: highlightCard 1.5s ease-in-out;
+        }
+
+        @keyframes highlightCard {
+            0% { background-color: #fef2f2; border-color: #ef4444; }
+            100% { background-color: #ffffff; border-color: #e5e7eb; }
+        }
+
+        /* M 版底頁彈窗風格 */
+        @media (max-width: 767px) {
+            .mobile-bottom-sheet {
+                border-bottom-left-radius: 0;
+                border-bottom-right-radius: 0;
+                border-top-left-radius: 1rem;
+                border-top-right-radius: 1rem;
+                max-height: 85vh !important;
+            }
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <!-- Top Notification Banner -->
+    <header class="bg-zinc-800 text-white text-center py-1.5 px-3 text-[11px] sm:text-xs md:text-sm font-medium tracking-wide z-50 flex-shrink-0 truncate">
+        動態說資：3D地圖動態導覽。（100% 滿版）
+    </header>
+
+    <!-- Navigation Header Bar (M版滑動與按鈕優化) -->
+    <nav id="app-nav" class="bg-white border-b border-gray-200 px-2 sm:px-4 py-2 flex-shrink-0 flex items-center justify-between gap-2 shadow-sm z-40 hidden">
+        <div class="flex items-center space-x-1.5 overflow-x-auto no-scrollbar py-0.5 max-w-full">
+            <button onclick="switchView('overview')" class="flex items-center space-x-1 px-2.5 py-1.5 border border-gray-300 rounded text-xs text-gray-700 hover:bg-gray-50 transition whitespace-nowrap font-medium active:scale-95">
+                <span>&lt; 返回產品頁</span>
+            </button>
+            <button id="nav-btn-overview" onclick="switchView('overview')" class="tab-btn tab-active px-3 py-1.5 border border-gray-300 rounded text-xs font-medium transition whitespace-nowrap active:scale-95">
+                行程總覽
+            </button>
+            <button id="nav-btn-day1" onclick="switchView('day1')" class="tab-btn px-3 py-1.5 border border-gray-300 rounded text-xs font-medium text-gray-700 hover:bg-gray-100 transition whitespace-nowrap active:scale-95">DAY 1</button>
+            <button id="nav-btn-day2" onclick="switchView('day2')" class="tab-btn px-3 py-1.5 border border-gray-300 rounded text-xs font-medium text-gray-700 hover:bg-gray-100 transition whitespace-nowrap active:scale-95">DAY 2</button>
+            <button id="nav-btn-day3" onclick="switchView('day3')" class="tab-btn px-3 py-1.5 border border-gray-300 rounded text-xs font-medium text-gray-700 hover:bg-gray-100 transition whitespace-nowrap active:scale-95">DAY 3</button>
+            <button id="nav-btn-day4" onclick="switchView('day4')" class="tab-btn px-3 py-1.5 border border-gray-300 rounded text-xs font-medium text-gray-700 hover:bg-gray-100 transition whitespace-nowrap active:scale-95">DAY 4</button>
+            <button id="nav-btn-day5" onclick="switchView('day5')" class="tab-btn px-3 py-1.5 border border-gray-300 rounded text-xs font-medium text-gray-700 hover:bg-gray-100 transition whitespace-nowrap active:scale-95">DAY 5</button>
+            <button id="nav-btn-notice" onclick="switchView('notice')" class="tab-btn px-3 py-1.5 border border-gray-300 rounded text-xs font-medium text-gray-700 hover:bg-gray-100 transition whitespace-nowrap active:scale-95">參團注意事項</button>
+        </div>
+        <div class="flex items-center space-x-1 shrink-0">
+            <button onclick="toggleStaticModal()" class="px-2.5 py-1.5 border border-gray-300 rounded text-xs text-gray-700 hover:bg-gray-50 transition whitespace-nowrap font-medium">
+                靜態版
+            </button>
+        </div>
+    </nav>
+
+    <!-- Mobile View Switcher Tab (M版專屬切換按鈕：文字列表 vs 3D地圖) -->
+    <div id="mobile-view-toggle" class="lg:hidden bg-gray-200 p-1 flex justify-center text-xs font-medium border-b border-gray-300 flex-shrink-0 hidden">
+        <button id="m-toggle-list" onclick="setMobileSubTab('list')" class="flex-1 py-1.5 text-center rounded-md bg-white text-gray-900 shadow-sm transition">
+            <i class="fa-solid fa-list-ul mr-1"></i>行程資訊
+        </button>
+        <button id="m-toggle-map" onclick="setMobileSubTab('map')" class="flex-1 py-1.5 text-center rounded-md text-gray-600 transition">
+            <i class="fa-solid fa-map-location-dot mr-1"></i>3D 地圖
+        </button>
+    </div>
+
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="fixed inset-0 bg-zinc-700 bg-opacity-95 flex flex-col items-center justify-center z-50 text-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl p-6 md:p-8 max-w-sm w-full flex flex-col items-center">
+            <div class="spinner mb-4"></div>
+            <h2 class="text-base md:text-lg font-bold text-gray-800 mb-1">說資載入中，請稍等</h2>
+            <p class="text-xs text-gray-500">連線中，請勿關閉視窗！</p>
+        </div>
+    </div>
+
+    <!-- Main Workspace Layout -->
+    <main id="app-content" class="flex-1 overflow-hidden hidden bg-gray-100">
+        <div id="main-layout-wrapper" class="h-full grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
+            
+            <!-- Left Panel: Content Area (M版優化間距與字體大小) -->
+            <div id="left-panel" class="lg:col-span-6 xl:col-span-6 overflow-y-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6 h-full">
+                
+                <!-- VIEW: OVERVIEW -->
+                <div id="view-overview" class="view-section space-y-4 sm:space-y-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-3">
+                        <div class="text-xs text-gray-500 space-x-2">
+                            <span>行程代號：<strong class="text-gray-700">26JFN08BRB-T</strong></span>
+                            <span class="bg-gray-200 px-1.5 py-0.5 rounded text-[10px]">5天</span>
+                        </div>
+                        <div class="bg-gray-100 border border-gray-300 text-gray-500 rounded px-3 py-1 text-xs font-semibold tracking-widest self-end sm:self-auto">
+                            LOGO
+                        </div>
+                    </div>
+
+                    <h1 class="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 leading-snug">
+                        九州旅遊|人氣由布院之森.海之中道水族館.鶴見岳空中纜車.和牛長腳蟹吃到飽.保住雙溫泉五日
+                    </h1>
+
+                    <div class="bg-white rounded-lg p-3.5 sm:p-4 border border-gray-200 shadow-sm text-xs text-gray-600 space-y-3 sm:space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 items-center">
+                            <div class="md:col-span-4 space-y-1 bg-gray-50 p-2.5 rounded sm:bg-transparent sm:p-0">
+                                <p><span class="text-gray-400">領隊姓名：</span>王大明 先生</p>
+                                <p><span class="text-gray-400">國內電話：</span>0912-345-678</p>
+                                <p><span class="text-gray-400">國外電話：</span>+81 90-1234-5678</p>
+                            </div>
+                            <div class="md:col-span-5 space-y-1 bg-gray-50 p-2.5 rounded sm:bg-transparent sm:p-0">
+                                <p><span class="text-gray-400">集合時間：</span>07/01 14:10</p>
+                                <p><span class="text-gray-400">集合地點：</span>桃園機場 華航第二航廈 7號 櫃台</p>
+                            </div>
+                            <div class="md:col-span-3 flex items-center space-x-3 border-t md:border-t-0 md:border-l pt-2 md:pt-0 md:pl-3 border-gray-100">
+                                <i class="fa-solid fa-qrcode text-3xl text-gray-800 shrink-0"></i>
+                                <div>
+                                    <p class="font-bold text-gray-700">意見調查表</p>
+                                    <p class="text-[10px] text-gray-400">掃描QRCode回饋</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 pt-1">
+                            <div class="bg-gray-50 p-2.5 sm:p-3 rounded border border-gray-100 flex justify-between items-center">
+                                <div>
+                                    <span class="bg-gray-200 text-gray-700 text-[10px] px-1.5 py-0.5 rounded mr-1.5">去程</span>
+                                    <span class="font-medium text-[11px] sm:text-xs">07/01(三) 中華航空 CI116</span>
+                                    <div class="mt-1 text-gray-500 font-medium text-[11px]">16:40 桃園機場 &gt; 20:00 福岡機場</div>
+                                </div>
+                                <span class="text-[10px] text-gray-400 whitespace-nowrap ml-1 shrink-0">02:20</span>
+                            </div>
+                            <div class="bg-gray-50 p-2.5 sm:p-3 rounded border border-gray-100 flex justify-between items-center">
+                                <div>
+                                    <span class="bg-gray-200 text-gray-700 text-[10px] px-1.5 py-0.5 rounded mr-1.5">回程</span>
+                                    <span class="font-medium text-[11px] sm:text-xs">07/05(日) 中華航空 CI117</span>
+                                    <div class="mt-1 text-gray-500 font-medium text-[11px]">22:30 福岡機場 &gt; 22:30 桃園機場</div>
+                                </div>
+                                <span class="text-[10px] text-gray-400 whitespace-nowrap ml-1 shrink-0">02:30</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+                        <div onclick="switchView('day1')" class="cursor-pointer bg-white border border-gray-200 rounded-lg p-3 hover:border-gray-400 hover:shadow-md transition active:scale-[0.99]">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded font-bold">DAY 1</span>
+                                <span class="text-[11px] text-gray-500">7/1(三)</span>
+                            </div>
+                            <p class="text-xs font-bold text-gray-800 line-clamp-2 leading-relaxed">
+                                台北 ➔ 福岡空港➔福岡〜自由夜訪天神中洲不夜城體驗日本屋台文化
+                            </p>
+                            <p class="text-[11px] text-gray-500 mt-1.5 truncate">旅館：HOTEL MONTE HERMANA FUKUOKA</p>
+                        </div>
+
+                        <div onclick="switchView('day2')" class="cursor-pointer bg-white border border-gray-200 rounded-lg p-3 hover:border-gray-400 hover:shadow-md transition active:scale-[0.99]">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded font-bold">DAY 2</span>
+                                <span class="text-[11px] text-gray-500">7/2(四)</span>
+                            </div>
+                            <p class="text-xs font-bold text-gray-800 line-clamp-2 leading-relaxed">
+                                搭乘由布院之森~湯之坪街道~別府海地獄➔保住2023全新開幕-別府灣和藏溫泉飯店
+                            </p>
+                            <p class="text-[11px] text-gray-500 mt-1.5 truncate">旅館：GRANDVRIO HOTEL BEPPUWAN WAKURA</p>
+                        </div>
+
+                        <div onclick="switchView('day3')" class="cursor-pointer bg-white border border-gray-200 rounded-lg p-3 hover:border-gray-400 hover:shadow-md transition active:scale-[0.99]">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded font-bold">DAY 3</span>
+                                <span class="text-[11px] text-gray-500">7/3(五)</span>
+                            </div>
+                            <p class="text-xs font-bold text-gray-800 line-clamp-2 leading-relaxed">
+                                九州自然動物園➔草千里之濱➔眺望阿蘇火山➔加贈冰淇淋➔阿蘇大觀峰展望台➔保住阿蘇格蘭溫泉飯店
+                            </p>
+                            <p class="text-[11px] text-gray-500 mt-1.5 truncate">旅館：ASO RESORT GRANDVRIO HOTEL</p>
+                        </div>
+
+                        <div onclick="switchView('day4')" class="cursor-pointer bg-white border border-gray-200 rounded-lg p-3 hover:border-gray-400 hover:shadow-md transition active:scale-[0.99]">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded font-bold">DAY 4</span>
+                                <span class="text-[11px] text-gray-500">7/4(六)</span>
+                            </div>
+                            <p class="text-xs font-bold text-gray-800 line-clamp-2 leading-relaxed">
+                                熊本城➔櫻之馬場城彩苑➔柳川人力遊船➔免稅店➔天神商圈
+                            </p>
+                            <p class="text-[11px] text-gray-500 mt-1.5 truncate">住宿：HOTEL ORIENTAL EXPRESS FUKUOKA NAKASU KAWABATA</p>
+                        </div>
+
+                        <div onclick="switchView('day5')" class="cursor-pointer bg-white border border-gray-200 rounded-lg p-3 hover:border-gray-400 hover:shadow-md transition active:scale-[0.99] col-span-1 sm:col-span-2">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded font-bold">DAY 5</span>
+                                <span class="text-[11px] text-gray-500">7/5(日)</span>
+                            </div>
+                            <p class="text-xs font-bold text-gray-800 line-clamp-2 leading-relaxed">
+                                海之中道MARINE WORLD水族館➔太宰府天滿宮➔品嚐必吃點心梅枝餅➔福岡LalaPort購物中心1:1鋼彈超人➔福岡空港 ➔ 台北
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="bg-gradient-to-r from-slate-200 via-gray-300 to-slate-200 rounded-xl p-5 text-center border border-gray-300 relative overflow-hidden flex flex-col items-center justify-center min-h-[120px] shadow-inner">
+                        <div class="relative z-10">
+                            <h2 class="text-xl sm:text-2xl font-extrabold text-gray-800 tracking-wider">買國內外</h2>
+                            <p class="text-xs sm:text-base font-bold text-gray-600 mt-1">行程 / 機票 / 住宿 加購高鐵享優惠</p>
+                        </div>
+                        <i class="fa-solid fa-train-subway text-6xl sm:text-7xl text-white/50 absolute right-2 sm:right-4 bottom-[-10px]"></i>
+                    </div>
+                </div>
+
+                <!-- VIEW: DAY 1 -->
+                <div id="view-day1" class="view-section space-y-4 sm:space-y-5 hidden">
+                    <div>
+                        <div class="flex items-center space-x-2 mb-1.5">
+                            <span class="bg-gray-300 text-gray-800 font-bold text-xs px-2 py-0.5 rounded">DAY 1</span>
+                            <span class="text-xs font-bold text-gray-500">7/1(三)</span>
+                        </div>
+                        <h2 class="text-base sm:text-lg md:text-xl font-bold text-gray-900 leading-snug">
+                            台北 ➔ 福岡空港➔福岡〜自由夜訪天神中洲不夜城體驗日本屋台文化
+                        </h2>
+                    </div>
+
+                    <div class="text-xs text-gray-600 leading-relaxed bg-white border border-gray-200 rounded-lg p-3 sm:p-3.5 space-y-1.5">
+                        <p class="font-bold text-gray-800">★九州自然動物園~叢林巴士探險-餵食動物設定為3-5人共用一盒★</p>
+                        <p class="text-gray-500">【特別說明】</p>
+                        <p class="text-gray-500">※如遇天候變化或維修等不可抗力因素，導致續車停駛，將改至參觀別府海地獄，並退費成人1000日圓、兒童不佔床600日圓 (不含嬰兒)，敬請諒解。</p>
+                        <p class="text-gray-500">※由布院之森列車如遇定期維修、預約席滿或天候等不可抗力因素，則改搭專車前往並退團體料金：成人3000日圓、兒童不佔床1500日圓 (不含嬰兒)。</p>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-3 sm:p-3.5 text-xs grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 items-stretch">
+                        <div class="flex items-start space-x-2.5">
+                            <span class="bg-gray-200 text-gray-700 text-[11px] px-2 py-0.5 rounded font-bold shrink-0">餐食</span>
+                            <div class="space-y-0.5 text-gray-600 flex-1">
+                                <p><span class="font-semibold text-gray-700">早餐：</span>飯店內早餐</p>
+                                <p><span class="font-semibold text-gray-700">午餐：</span>溫暖的家</p>
+                                <p><span class="font-semibold text-gray-700">晚餐：</span>機上精緻簡餐</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-2.5 border-t sm:border-t-0 sm:border-l pt-2 sm:pt-0 sm:pl-4 border-gray-200">
+                            <span class="bg-gray-200 text-gray-700 text-[11px] px-2 py-0.5 rounded font-bold shrink-0">住宿</span>
+                            <div class="text-gray-600 flex-1">
+                                <p><span class="font-semibold text-gray-700">旅館：</span>HOTEL MONTE HERMANA FUKUOKA</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Timeline / Spot List (M版優化點擊範圍與觸控體驗) -->
+                    <div class="relative pl-7 sm:pl-8 space-y-4 sm:space-y-6">
+                        <div class="absolute left-[10px] sm:left-[12px] top-6 bottom-4 w-0.5 bg-gray-300 z-0"></div>
+
+                        <!-- Spot Item 1 -->
+                        <div id="card-item-0" class="relative pt-1">
+                            <div class="absolute -left-7 sm:-left-8 top-3 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-zinc-700 text-white text-[11px] sm:text-xs font-bold flex items-center justify-center z-10 shadow-sm">
+                                1
+                            </div>
+                            <div onclick="openSpotModal(0)" class="cursor-pointer bg-white border border-gray-200 rounded-lg p-3 sm:p-4 shadow-sm hover:border-gray-400 transition active:bg-gray-50">
+                                <div class="grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 items-center">
+                                    <div class="md:col-span-3 aspect-[16/9] md:aspect-[4/3] w-full bg-gray-100 rounded-md flex flex-col items-center justify-center p-2 text-gray-400 border border-dashed border-gray-300">
+                                        <i class="fa-regular fa-image text-lg mb-0.5"></i>
+                                        <span class="text-[9px] font-medium">景點圖片</span>
+                                    </div>
+                                    <div class="md:col-span-9 flex flex-col justify-between">
+                                        <div>
+                                            <div class="flex items-center justify-between sm:justify-start sm:space-x-2 mb-1">
+                                                <h3 class="font-bold text-gray-900 text-sm sm:text-base">九州自然野生動物園</h3>
+                                                <span class="bg-gray-100 text-gray-600 border border-gray-200 text-[10px] px-1.5 py-0.5 rounded shrink-0">特別安排</span>
+                                            </div>
+                                            <p class="text-xs text-gray-600 leading-relaxed line-clamp-2 sm:line-clamp-3">
+                                                一生能有幾次機會近距離觀看野生猛獸之外，還能親自餵食，在寬廣的自然環境中，有1400隻，共70種的動物悠閒地棲息處，是日本最大的野生動物園區。
+                                            </p>
+                                        </div>
+                                        <div class="flex items-center justify-between text-xs text-gray-500 mt-2.5 pt-2 border-t border-gray-100">
+                                            <span class="text-[11px]">停留 1小時30分</span>
+                                            <button onclick="event.stopPropagation(); switchToMapViewAndFocus(0);" class="flex items-center space-x-1 text-gray-700 hover:text-black font-medium px-2 py-1 bg-gray-100 rounded sm:bg-transparent sm:p-0">
+                                                <i class="fa-solid fa-location-dot text-red-500"></i>
+                                                <span class="text-[11px] sm:text-xs">看地圖</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Spot Item 2 -->
+                        <div id="card-item-1" class="relative pt-1">
+                            <div class="absolute -left-7 sm:-left-8 top-3 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-zinc-700 text-white text-[11px] sm:text-xs font-bold flex items-center justify-center z-10 shadow-sm">
+                                2
+                            </div>
+                            <div onclick="openSpotModal(1)" class="cursor-pointer bg-white border border-gray-200 rounded-lg p-3 sm:p-4 shadow-sm hover:border-gray-400 transition active:bg-gray-50">
+                                <div class="grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 items-center">
+                                    <div class="md:col-span-3 aspect-[16/9] md:aspect-[4/3] w-full bg-gray-100 rounded-md flex flex-col items-center justify-center p-2 text-gray-400 border border-dashed border-gray-300">
+                                        <i class="fa-regular fa-image text-lg mb-0.5"></i>
+                                        <span class="text-[9px] font-medium">景點圖片</span>
+                                    </div>
+                                    <div class="md:col-span-9 flex flex-col justify-between">
+                                        <div>
+                                            <div class="flex items-center justify-between sm:justify-start sm:space-x-2 mb-1">
+                                                <h3 class="font-bold text-gray-900 text-sm sm:text-base">櫻花馬場城彩苑</h3>
+                                                <span class="bg-gray-100 text-gray-600 border border-gray-200 text-[10px] px-1.5 py-0.5 rounded shrink-0">特別安排</span>
+                                            </div>
+                                            <p class="text-xs text-gray-600 leading-relaxed line-clamp-2 sm:line-clamp-3">
+                                                坐落在熊本縣熊本市內的櫻花馬場城彩苑為熊本城下一處結合歷史文化與觀光遊憩的景點。城彩苑打造仿古街道重現往昔城下町風光，營造濃厚的江戶風情。
+                                            </p>
+                                        </div>
+                                        <div class="flex items-center justify-between text-xs text-gray-500 mt-2.5 pt-2 border-t border-gray-100">
+                                            <span class="text-[11px]">停留 1小時30分</span>
+                                            <button onclick="event.stopPropagation(); switchToMapViewAndFocus(1);" class="flex items-center space-x-1 text-gray-700 hover:text-black font-medium px-2 py-1 bg-gray-100 rounded sm:bg-transparent sm:p-0">
+                                                <i class="fa-solid fa-location-dot text-red-500"></i>
+                                                <span class="text-[11px] sm:text-xs">看地圖</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Spot Item 3 -->
+                        <div id="card-item-2" class="relative pt-1">
+                            <div class="absolute -left-7 sm:-left-8 top-3 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-zinc-700 text-white text-[11px] sm:text-xs font-bold flex items-center justify-center z-10 shadow-sm">
+                                3
+                            </div>
+                            <div onclick="openSpotModal(2)" class="cursor-pointer bg-white border border-gray-200 rounded-lg p-3 sm:p-4 shadow-sm hover:border-gray-400 transition active:bg-gray-50">
+                                <div class="grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 items-center">
+                                    <div class="md:col-span-3 aspect-[16/9] md:aspect-[4/3] w-full bg-gray-100 rounded-md flex flex-col items-center justify-center p-2 text-gray-400 border border-dashed border-gray-300">
+                                        <i class="fa-regular fa-image text-lg mb-0.5"></i>
+                                        <span class="text-[9px] font-medium">景點圖片</span>
+                                    </div>
+                                    <div class="md:col-span-9 flex flex-col justify-between">
+                                        <div>
+                                            <div class="flex items-center justify-between sm:justify-start sm:space-x-2 mb-1">
+                                                <h3 class="font-bold text-gray-900 text-sm sm:text-base">柳川遊船</h3>
+                                                <span class="bg-gray-100 text-gray-600 border border-gray-200 text-[10px] px-1.5 py-0.5 rounded shrink-0">特別安排</span>
+                                            </div>
+                                            <p class="text-xs text-gray-600 leading-relaxed line-clamp-2 sm:line-clamp-3">
+                                                福岡縣柳川市是日本著名的水鄉，而「柳川遊船」更可謂此處的觀光代名詞。過去藩政時期在柳川築城圍濠，如今保留下錯綜綿延的運河水道。
+                                            </p>
+                                        </div>
+                                        <div class="flex items-center justify-between text-xs text-gray-500 mt-2.5 pt-2 border-t border-gray-100">
+                                            <span class="text-[11px]">停留 1小時30分</span>
+                                            <button onclick="event.stopPropagation(); switchToMapViewAndFocus(2);" class="flex items-center space-x-1 text-gray-700 hover:text-black font-medium px-2 py-1 bg-gray-100 rounded sm:bg-transparent sm:p-0">
+                                                <i class="fa-solid fa-location-dot text-red-500"></i>
+                                                <span class="text-[11px] sm:text-xs">看地圖</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Hotel Item -->
+                        <div id="card-item-3" class="relative pt-1">
+                            <div class="absolute -left-7 sm:-left-8 top-3 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-zinc-700 text-white text-[10px] sm:text-[11px] font-bold flex items-center justify-center z-10 shadow-sm">
+                                宿
+                            </div>
+                            <div onclick="openSpotModal(3)" class="cursor-pointer bg-white border border-gray-200 rounded-lg p-3 sm:p-4 shadow-sm hover:border-gray-400 transition active:bg-gray-50">
+                                <div class="grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 items-center">
+                                    <div class="md:col-span-3 aspect-[16/9] md:aspect-[4/3] w-full bg-gray-100 rounded-md flex flex-col items-center justify-center p-2 text-gray-400 border border-dashed border-gray-300">
+                                        <i class="fa-solid fa-hotel text-lg mb-0.5"></i>
+                                        <span class="text-[9px] font-medium">飯店圖片</span>
+                                    </div>
+                                    <div class="md:col-span-9 flex flex-col justify-between space-y-2">
+                                        <div>
+                                            <h3 class="font-bold text-gray-900 text-sm sm:text-base mb-1">HOTEL MONTE HERMANA FUKUOKA</h3>
+                                            <p class="text-xs text-gray-500 truncate">〒810-0004 福岡縣福岡市中央區渡邊通3丁目4番24號</p>
+                                            <p class="text-xs text-gray-500">TEL: 81-92-7357111</p>
+                                        </div>
+                                        <div class="flex items-center justify-between border-t border-gray-100 pt-2">
+                                            <div class="text-[11px] text-gray-400 flex items-center space-x-1">
+                                                <i class="fa-solid fa-location-dot"></i>
+                                                <span>福岡市-福岡縣</span>
+                                            </div>
+                                            <button onclick="event.stopPropagation(); switchToMapViewAndFocus(3);" class="flex items-center space-x-1 text-gray-700 hover:text-black text-xs font-medium px-2 py-1 bg-gray-100 rounded sm:bg-transparent sm:p-0">
+                                                <i class="fa-solid fa-location-dot text-red-500"></i>
+                                                <span class="text-[11px] sm:text-xs">看地圖</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW: DAY 2-5 GENERIC -->
+                <div id="view-generic" class="view-section space-y-4 hidden">
+                    <div class="bg-white p-6 rounded-lg border border-gray-200 text-center space-y-3">
+                        <i class="fa-solid fa-calendar-day text-4xl text-gray-300"></i>
+                        <h2 id="generic-title" class="text-lg font-bold text-gray-800">DAY 行程內容</h2>
+                        <p class="text-xs text-gray-500">這裡呈現該天數的景點、餐食與住宿詳細資訊。</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Panel: Dynamic Map Section (M版響應式高度調整與地圖切換) -->
+            <div id="right-map-panel" class="lg:col-span-6 xl:col-span-6 map-container relative min-h-[300px] h-full flex flex-col hidden lg:flex">
+                <canvas id="map-canvas" class="w-full h-full absolute inset-0 z-0 cursor-pointer"></canvas>
+
+                <!-- Dynamic Map Popup Card -->
+                <div id="poi-card-1" class="absolute z-20 bg-white border border-gray-300 rounded-lg p-2.5 sm:p-3 shadow-xl transition-all duration-300 max-w-[180px] sm:max-w-[210px] hidden" style="left: 0; top: 0;">
+                    <div class="flex justify-between items-center mb-1 gap-1">
+                        <h4 id="poi-title" class="font-bold text-xs text-gray-800 truncate">九州自然野生動物園</h4>
+                        <button onclick="hidePoiCard()" class="text-gray-400 hover:text-gray-600 text-xs px-1">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                    <button id="poi-intro-btn" onclick="openModalFromMapPopup()" class="bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-700 text-[11px] px-2.5 py-1 rounded transition w-full text-center mt-1 font-medium active:scale-95">
+                        看介紹
+                    </button>
+                </div>
+
+                <div id="map-center-overlay" class="absolute z-10 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white/90 backdrop-blur border border-gray-300 rounded-xl px-5 py-3 sm:px-8 sm:py-5 text-center shadow-lg pointer-events-none transition-all duration-500 max-w-[85%]">
+                    <p id="map-label-title" class="text-lg sm:text-xl font-bold tracking-wider text-gray-700">MAP</p>
+                    <p id="map-label-sub" class="text-[11px] sm:text-xs text-gray-500 mt-0.5">顯示當日所有的景點POI經緯度</p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- VIEW: NOTICE (M版優化卡片佈局與內距) -->
+        <div id="view-notice-container" class="h-full overflow-y-auto p-3 sm:p-4 md:p-6 hidden">
+            <div class="max-w-[1200px] mx-auto space-y-4 sm:space-y-6">
+                <!-- Product Header Info Bar -->
+                <div class="text-xs text-gray-500 space-y-1">
+                    <p>行程代號：<strong class="text-gray-700">26JFN08BRB-T</strong></p>
+                    <h1 class="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 leading-snug">
+                        九州旅遊|人氣由布院之森.海之中道水族館.鶴見岳空中纜車.和牛長腳蟹吃到飽.保住雙溫泉五日
+                    </h1>
+                </div>
+
+                <!-- Two-Column Main Wireframe Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
+                    
+                    <!-- LEFT COLUMN (col-span-8) -->
+                    <div class="lg:col-span-8 space-y-4 text-xs text-gray-700">
+                        
+                        <!-- 1. Flight Info Section -->
+                        <div class="bg-white rounded-lg p-3.5 sm:p-4 border border-gray-200 shadow-sm space-y-3">
+                            <h3 class="font-bold text-gray-900 text-sm">航班參考</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                                <div class="bg-gray-50 p-2.5 sm:p-3 rounded border border-gray-200 flex justify-between items-center">
+                                    <div>
+                                        <span class="bg-gray-200 text-gray-700 text-[10px] px-1.5 py-0.5 rounded mr-1.5 font-bold">去程</span>
+                                        <span class="font-bold text-gray-800 text-[11px] sm:text-xs">07/03(五) 中華航空 CI116</span>
+                                        <p class="mt-1 text-gray-600 font-medium text-[11px]">16:40 桃園機場 &gt; 20:00 福岡機場</p>
+                                    </div>
+                                    <span class="text-[10px] text-gray-400 whitespace-nowrap pl-2">02:20</span>
+                                </div>
+                                <div class="bg-gray-50 p-2.5 sm:p-3 rounded border border-gray-200 flex justify-between items-center">
+                                    <div>
+                                        <span class="bg-gray-200 text-gray-700 text-[10px] px-1.5 py-0.5 rounded mr-1.5 font-bold">回程</span>
+                                        <span class="font-bold text-gray-800 text-[11px] sm:text-xs">07/05(日) 中華航空 CI117</span>
+                                        <p class="mt-1 text-gray-600 font-medium text-[11px]">22:30 福岡機場 &gt; 22:30 桃園機場</p>
+                                    </div>
+                                    <span class="text-[10px] text-gray-400 whitespace-nowrap pl-2">02:30</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. Accommodation Grid Section -->
+                        <div class="bg-white rounded-lg p-3.5 sm:p-4 border border-gray-200 shadow-sm space-y-3">
+                            <h3 class="font-bold text-gray-900 text-sm">住宿</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                                <div class="bg-gray-50 p-2.5 sm:p-3 rounded border border-gray-200 space-y-1">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="bg-gray-200 text-gray-700 text-[10px] px-1.5 py-0.5 rounded font-bold">DAY 1</span>
+                                        <span class="font-bold text-gray-800">07/01(三)</span>
+                                        <span class="text-gray-400 text-[10px] truncate">福岡市-福岡縣</span>
+                                    </div>
+                                    <p class="font-bold text-gray-800 pt-1 truncate">HOTEL MONTE HERMANA FUKUOKA</p>
+                                    <p class="text-gray-500 text-[11px]">〒810-0004 福岡縣福岡市中央區渡邊通3丁目4番24號</p>
+                                    <p class="text-gray-500 font-mono text-[11px]">TEL: 81-92-7357111</p>
+                                </div>
+
+                                <div class="bg-gray-50 p-2.5 sm:p-3 rounded border border-gray-200 space-y-1">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="bg-gray-200 text-gray-700 text-[10px] px-1.5 py-0.5 rounded font-bold">DAY 2</span>
+                                        <span class="font-bold text-gray-800">07/02(四)</span>
+                                        <span class="text-gray-400 text-[10px] truncate">日出町-大分縣</span>
+                                    </div>
+                                    <p class="font-bold text-gray-800 pt-1 truncate">GRANDVRIO HOTEL BEPPUWAN WAKURA</p>
+                                    <p class="text-gray-500 text-[11px]">〒879-1508 大分縣速見郡日出町大字平道1780-1</p>
+                                    <p class="text-gray-500 font-mono text-[11px]">TEL: 81815052115</p>
+                                </div>
+
+                                <div class="bg-gray-50 p-2.5 sm:p-3 rounded border border-gray-200 space-y-1">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="bg-gray-200 text-gray-700 text-[10px] px-1.5 py-0.5 rounded font-bold">DAY 3</span>
+                                        <span class="font-bold text-gray-800">07/03(五)</span>
+                                        <span class="text-gray-400 text-[10px] truncate">阿蘇郡-熊本縣</span>
+                                    </div>
+                                    <p class="font-bold text-gray-800 pt-1 truncate">ASO RESORT GRANDVRIO HOTEL</p>
+                                    <p class="text-gray-500 text-[11px]">〒869-2232 熊本縣阿蘇市赤水米塚溫泉</p>
+                                    <p class="text-gray-500 font-mono text-[11px]">TEL: 81-967-35-2111</p>
+                                </div>
+
+                                <div class="bg-gray-50 p-2.5 sm:p-3 rounded border border-gray-200 space-y-1">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="bg-gray-200 text-gray-700 text-[10px] px-1.5 py-0.5 rounded font-bold">DAY 4</span>
+                                        <span class="font-bold text-gray-800">07/04(六)</span>
+                                        <span class="text-gray-400 text-[10px] truncate">福岡市-福岡縣</span>
+                                    </div>
+                                    <p class="font-bold text-gray-800 pt-1 truncate">HOTEL ORIENTAL EXPRESS FUKUOKA</p>
+                                    <p class="text-gray-500 text-[11px]">〒812-0025 福岡縣福岡市博多區店屋町6-26</p>
+                                    <p class="text-gray-500 font-mono text-[11px]">TEL: 81-92-402-2725</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 3. Accordion Note List Blocks -->
+                        <div class="space-y-3">
+                            <div class="bg-white rounded-lg border border-gray-200 p-3.5 sm:p-4 space-y-2 shadow-sm">
+                                <h4 class="font-bold text-gray-900 text-sm">行程備註說明</h4>
+                                <div class="text-gray-600 space-y-1.5 leading-relaxed line-clamp-3">
+                                    <p>★本行程最低出團人數為16人(含)以上～41人(次)以下。</p>
+                                    <p>★使領會妥善安排換匯、安排導覽、飯店、貼心的導覽解說服務。</p>
+                                    <p>★日本國國土交通省於令和6年4月(2024年04月01日)發布最新規定，每日行程時間不得超過10小時（以由車庫實際發車至返抵為計算基準），以有效防止巴士司機過勞(俗稱黑心)勞動狀況衍生之交通狀況。（資料來源：日本國國土交通省）；因應國土交通省有巴士司機工時限制規定，若超時的司機工時的部分，為使團體行程能順利進行，交通工具可能會使用大眾交通工具（電車或地下鐵或短程計程車）等，敬請知悉！...</p>
+                                </div>
+                                <button onclick="toggleNoticeAccordion(this)" class="text-gray-700 hover:text-black font-semibold flex items-center space-x-1 pt-1 text-xs">
+                                    <span>看完整資訊</span>
+                                    <i class="fa-solid fa-chevron-down transition-transform"></i>
+                                </button>
+                            </div>
+
+                            <div class="bg-white rounded-lg border border-gray-200 p-3.5 sm:p-4 space-y-2 shadow-sm">
+                                <h4 class="font-bold text-gray-900 text-sm">房型備註說明</h4>
+                                <div class="text-gray-600 space-y-1.5 leading-relaxed line-clamp-3">
+                                    <p>★小孩不佔床（須為生活挑選、未滿六歲）之兒童。</p>
+                                    <p>★住宿酒店皆以(二人一室)為主，保障您旅遊的品質。</p>
+                                    <p>★如需求單人房，請洽業務確認加價費用。</p>
+                                    <p>★若為一大成人加一大兒童參加，請洽業務轉確認費用。...</p>
+                                </div>
+                                <button onclick="toggleNoticeAccordion(this)" class="text-gray-700 hover:text-black font-semibold flex items-center space-x-1 pt-1 text-xs">
+                                    <span>看完整資訊</span>
+                                    <i class="fa-solid fa-chevron-down transition-transform"></i>
+                                </button>
+                            </div>
+
+                            <div class="bg-white rounded-lg border border-gray-200 p-3.5 sm:p-4 space-y-2 shadow-sm">
+                                <h4 class="font-bold text-gray-900 text-sm">台灣機場安檢規定</h4>
+                                <div class="text-gray-600 space-y-1.5 leading-relaxed line-clamp-3">
+                                    <p>出境旅客於完成報到手續及託運行李後，請至出境檢查入口辦理安全檢查手續。</p>
+                                    <p>檢查通關金屬探測門時，請將金屬物品揮至金屬檢測盤，並將身上的金屬物品放至置物盤，將其與隨身行李一同置入X光檢查儀。</p>
+                                    <p>‧下列物品絕對禁止放置於託運行李中(包含隨身手提、托運)：</p>
+                                    <p>‧違反任何中各地區政府規定者，禁止放置於行李中。...</p>
+                                </div>
+                                <button onclick="toggleNoticeAccordion(this)" class="text-gray-700 hover:text-black font-semibold flex items-center space-x-1 pt-1 text-xs">
+                                    <span>看完整資訊</span>
+                                    <i class="fa-solid fa-chevron-down transition-transform"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT COLUMN SIDEBAR (col-span-4) -->
+                    <div class="lg:col-span-4 space-y-3 sm:space-y-4 text-xs">
+                        
+                        <!-- LOGO Card -->
+                        <div class="flex justify-end hidden lg:flex">
+                            <div class="bg-gray-200 text-gray-600 px-6 py-1.5 rounded font-bold text-xs tracking-widest">
+                                LOGO
+                            </div>
+                        </div>
+
+                        <!-- Leader Info Card -->
+                        <div class="bg-white rounded-lg p-3.5 sm:p-4 border border-gray-200 shadow-sm space-y-1.5">
+                            <h3 class="font-bold text-gray-900 text-sm border-b pb-1.5">領隊資訊</h3>
+                            <p><span class="text-gray-400">領隊姓名：</span>余椎昆 先生</p>
+                            <p><span class="text-gray-400">國內電話：</span>+886 0919209324</p>
+                            <p><span class="text-gray-400">國外電話：</span>+81 08026822518</p>
+                        </div>
+
+                        <!-- Meeting Details Card -->
+                        <div class="bg-white rounded-lg p-3.5 sm:p-4 border border-gray-200 shadow-sm space-y-1.5">
+                            <h3 class="font-bold text-gray-900 text-sm border-b pb-1.5">集合地點</h3>
+                            <p><span class="text-gray-400">集合時間：</span>07/01 14:10</p>
+                            <p><span class="text-gray-400">集合地點：</span>桃園機場 華航第二航廈 7號 櫃台</p>
+                            <p><span class="text-gray-400">航空公司電話：</span>986-3-3982451</p>
+                        </div>
+
+                        <!-- Feedback Form QR Code Card -->
+                        <div class="bg-white rounded-lg p-3.5 sm:p-4 border border-gray-200 shadow-sm flex items-center space-x-3">
+                            <i class="fa-solid fa-qrcode text-3xl text-gray-800"></i>
+                            <div>
+                                <h4 class="font-bold text-gray-800 text-xs">意見調查表</h4>
+                                <p class="text-[10px] text-gray-400">掃描QRCode回饋</p>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Spot Detail Lightbox Modal (M版改為 Bottom Sheet 操作更順手) -->
+    <div id="spot-modal" class="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+        <div class="bg-white rounded-t-2xl sm:rounded-xl shadow-2xl max-w-2xl w-full max-h-[85vh] sm:max-h-[90vh] flex flex-col overflow-hidden relative animate-in slide-in-from-bottom duration-200 mobile-bottom-sheet">
+            <!-- Mobile Header Handle Decorator -->
+            <div class="sm:hidden w-12 h-1.5 bg-gray-300 rounded-full mx-auto my-2 shrink-0"></div>
+
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 bg-white">
+                <div class="flex items-center space-x-2">
+                    <h3 id="modal-spot-title" class="text-base sm:text-lg font-bold text-gray-900 truncate">九州自然野生動物園</h3>
+                    <span id="modal-spot-badge" class="bg-gray-100 text-gray-700 border border-gray-300 text-[10px] sm:text-xs px-2 py-0.5 rounded font-medium shrink-0">特別安排</span>
+                </div>
+                <button onclick="closeSpotModal()" class="text-gray-400 hover:text-gray-700 p-1.5 rounded-full hover:bg-gray-100 transition active:scale-95">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body Content -->
+            <div class="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-6 flex-1 text-xs sm:text-sm text-gray-700">
+                <div class="bg-zinc-900 rounded-lg overflow-hidden relative flex flex-col items-center justify-center min-h-[180px] sm:min-h-[260px] text-gray-300 shadow-inner">
+                    <div class="text-center space-y-1 z-10 p-4">
+                        <i class="fa-regular fa-image text-3xl sm:text-4xl mb-1 text-gray-400"></i>
+                        <p class="text-sm sm:text-base font-bold text-white tracking-wide">景點圖片</p>
+                        <p class="text-[10px] sm:text-xs text-gray-400">輪播圖片 preview</p>
+                    </div>
+                    <div class="absolute bottom-2.5 left-2.5 bg-black/60 text-white text-[10px] sm:text-xs px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full z-20 font-mono">
+                        1/5
+                    </div>
+                </div>
+
+                <div class="space-y-2.5 leading-relaxed text-gray-600">
+                    <p id="modal-spot-desc">
+                        一生能有幾次機會近距離觀看野生猛獸之外，還能親自餵食，在寬廣的自然環境中，有1400隻，共70種的動物悠閒地棲息處，是日本最大的野生動物園區。
+                    </p>
+                </div>
+
+                <div class="flex items-center justify-between pt-3 border-t border-gray-100 text-xs text-gray-500">
+                    <span id="modal-spot-duration" class="text-[11px] sm:text-xs">停留時間 1小時30分</span>
+                    <button onclick="closeSpotModal(); switchToMapViewAndFocus(activeFocusedNodeIdx || 0);" class="flex items-center space-x-1.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-800 px-3 py-1.5 rounded-md font-medium transition active:scale-95">
+                        <i class="fa-solid fa-location-dot text-red-500"></i>
+                        <span>在地圖中查看</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Static Version Info Modal -->
+    <div id="static-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-xl p-5 sm:p-6 max-w-md w-full space-y-3 sm:space-y-4">
+            <h3 class="font-bold text-base sm:text-lg text-gray-800">靜態版說資切換</h3>
+            <p class="text-xs text-gray-600 leading-relaxed">
+                您目前正處於動態 3D 地圖導覽模式。如需列印或閱讀傳統靜態說明資料，可切換為傳統靜態版說資。
+            </p>
+            <div class="flex justify-end space-x-2 pt-2">
+                <button onclick="toggleStaticModal()" class="px-3.5 py-1.5 border border-gray-300 rounded text-xs text-gray-600 hover:bg-gray-50 font-medium">關閉</button>
+                <button onclick="toggleStaticModal();" class="px-3.5 py-1.5 bg-zinc-800 text-white rounded text-xs hover:bg-zinc-700 font-medium">確認切換</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const mapDayConfig = {
+            overview: {
+                label: '全行程總覽地圖',
+                nodes: [
+                    { id: '1', label: '1', xPct: 0.28, yPct: 0.22, name: '九州自然野生動物園', targetDay: 'day1', desc: '一生能有幾次機會近距離觀看野生猛獸之外，還能親自餵食，在寬廣的自然環境中，有1400隻，共70種的動物悠閒地棲息處，是日本最大的野生動物園區。', duration: '停留時間 1小時30分', badge: '特別安排' },
+                    { id: '2', label: '2', xPct: 0.52, yPct: 0.38, name: '櫻花馬場城彩苑', targetDay: 'day4', desc: '坐落在熊本縣熊本市內的櫻花馬場城彩苑為熊本城下一處結合歷史文化與觀光遊憩的景點。', duration: '停留時間 1小時30分', badge: '特別安排' },
+                    { id: '3', label: '3', xPct: 0.35, yPct: 0.68, name: '柳川遊船', targetDay: 'day4', desc: '福岡縣柳川市是日本著名的水鄉，而「柳川遊船」更可謂此處的觀光代名詞。', duration: '停留時間 1小時30分', badge: '特別安排' },
+                    { id: '宿', label: '宿', xPct: 0.75, yPct: 0.76, name: 'HOTEL MONTE HERMANA FUKUOKA', targetDay: 'day1', desc: '〒810-0004 福岡縣福岡市中央區渡邊通3丁目4番24號', duration: '住宿飯店', badge: '精選住宿' }
+                ]
+            },
+            day1: {
+                label: 'DAY 1 地圖 (福岡不夜城)',
+                nodes: [
+                    { id: '1', label: '1', xPct: 0.25, yPct: 0.25, name: '九州自然野生動物園', targetDay: 'day1', desc: '一生能有幾次機會近距離觀看野生猛獸之外，還能親自餵食，在寬廣的自然環境中，有1400隻，共70種的動物悠閒地棲息處，是日本最大的野生動物園區。', duration: '停留時間 1小時30分', badge: '特別安排' },
+                    { id: '2', label: '2', xPct: 0.50, yPct: 0.40, name: '櫻花馬場城彩苑', targetDay: 'day1', desc: '坐落在熊本縣熊本市內的櫻花馬場城彩苑為熊本城下一處結合歷史文化與觀光遊憩的景點。城彩苑打造仿古街道重現往昔城下町風光，營造濃厚的江戶風情。', duration: '停留時間 1小時30分', badge: '特別安排' },
+                    { id: '3', label: '3', xPct: 0.65, yPct: 0.60, name: '柳川遊船', targetDay: 'day1', desc: '福岡縣柳川市是日本著名的水鄉，而「柳川遊船」更可謂此處的觀光代名詞。過去藩政時期在柳川築城圍濠，如今保留下錯綜綿延的運河水道。', duration: '停留時間 1小時30分', badge: '特別安排' },
+                    { id: '宿', label: '宿', xPct: 0.75, yPct: 0.75, name: 'HOTEL MONTE HERMANA FUKUOKA', targetDay: 'day1', desc: '〒810-0004 福岡縣福岡市中央區渡邊通3丁目4番24號\nTEL: 81-92-7357111', duration: '住宿飯店', badge: '精選住宿' }
+                ]
+            },
+            day2: {
+                label: 'DAY 2 地圖 (湯布院・別府)',
+                nodes: [
+                    { id: '1', label: '1', xPct: 0.30, yPct: 0.25, name: '由布院之森', targetDay: 'day2', desc: '充滿復古優雅風情的觀光列車，穿梭於翠綠的九州山林之間。', duration: '搭乘時間約 1小時', badge: '特色列車' },
+                    { id: '2', label: '2', xPct: 0.55, yPct: 0.35, name: '湯之坪街道', targetDay: 'day2', desc: '沿途充滿特色手作雜貨、甜點與森林童話村風格的知名散策街道。', duration: '停留時間 2小時', badge: '熱門商圈' },
+                    { id: '3', label: '3', xPct: 0.70, yPct: 0.50, name: '別府海地獄', targetDay: 'day2', desc: '呈現夢幻湛藍色的硫磺溫泉地獄景觀，煙霧瀰漫極具壯麗奇觀。', duration: '停留時間 1小時', badge: '名勝景點' },
+                    { id: '宿', label: '宿', xPct: 0.82, yPct: 0.70, name: '別府灣和藏溫泉飯店', targetDay: 'day2', desc: '2023年全新開幕，可眺望美麗別府灣的海景溫泉渡假飯店。', duration: '優質住宿', badge: '溫泉飯店' }
+                ]
+            },
+            day3: {
+                label: 'DAY 3 地圖 (阿蘇火山)',
+                nodes: [
+                    { id: '1', label: '1', xPct: 0.25, yPct: 0.30, name: '九州自然動物園', targetDay: 'day3', desc: '乘搭叢林巴士近距離親手餵食獅子與大熊。', duration: '停留時間 1小時30分', badge: '特別安排' },
+                    { id: '2', label: '2', xPct: 0.48, yPct: 0.52, name: '草千里之濱', targetDay: 'day3', desc: '烏帽子岳山麓前的廣闊大草原，牛馬成群漫步景色宜人。', duration: '停留時間 1小時', badge: '自然景觀' },
+                    { id: '3', label: '3', xPct: 0.72, yPct: 0.40, name: '阿蘇大觀峰', targetDay: 'day3', desc: '眺望阿蘇五岳與外輪山的最佳360度展望台。', duration: '停留時間 45分', badge: '絕景展望' },
+                    { id: '宿', label: '宿', xPct: 0.80, yPct: 0.80, name: '阿蘇格蘭溫泉飯店', targetDay: 'day3', desc: '坐落於阿蘇山麓的大型度假溫泉飯店。', duration: '優質住宿', badge: '溫泉飯店' }
+                ]
+            },
+            day4: {
+                label: 'DAY 4 地圖 (熊本・柳川)',
+                nodes: [
+                    { id: '1', label: '1', xPct: 0.22, yPct: 0.60, name: '熊本城', targetDay: 'day4', desc: '日本三大名城之一，氣勢磅礡的黑白對比天守閣。', duration: '停留時間 1小時30分', badge: '歷史名城' },
+                    { id: '2', label: '2', xPct: 0.38, yPct: 0.50, name: '櫻之馬場城彩苑', targetDay: 'day4', desc: '重現江戶城下町風情的特色美食與伴手禮街區。', duration: '停留時間 1小時', badge: '美食街區' },
+                    { id: '3', label: '3', xPct: 0.58, yPct: 0.35, name: '柳川人力遊船', targetDay: 'day4', desc: '乘坐扁舟漫遊幽靜水鄉，聆聽船夫吟唱船歌。', duration: '停留時間 1小時20分', badge: '水鄉風情' },
+                    { id: '宿', label: '宿', xPct: 0.78, yPct: 0.25, name: 'ORIENTAL EXPRESS FUKUOKA', targetDay: 'day4', desc: '位處福岡市中心的時尚設計商旅。', duration: '精選住宿', badge: '都會飯店' }
+                ]
+            },
+            day5: {
+                label: 'DAY 5 地圖 (水族館・太宰府)',
+                nodes: [
+                    { id: '1', label: '1', xPct: 0.35, yPct: 0.20, name: '海之中道水族館', targetDay: 'day5', desc: '以對馬暖流為主題的大型海洋世界，精彩的海豚秀表演。', duration: '停留時間 2小時', badge: '親子景點' },
+                    { id: '2', label: '2', xPct: 0.50, yPct: 0.45, name: '太宰府天滿宮', targetDay: 'day5', desc: '祈求學業合格的日本全國天滿宮總本社。', duration: '停留時間 1小時30分', badge: '文化名所' },
+                    { id: '3', label: '3', xPct: 0.68, yPct: 0.65, name: '福岡LalaPort鋼彈', targetDay: 'day5', desc: '擁有全日本唯一的1:1實物大巨大鋼彈立像與豐富購物商城。', duration: '停留時間 2小時', badge: '熱門地標' },
+                    { id: '宿', label: '機', xPct: 0.85, yPct: 0.80, name: '福岡空港 ➔ 台北', targetDay: 'day5', desc: '搭乘中華航空直飛班機返回溫暖的家。', duration: '快樂賦歸', badge: '返程航班' }
+                ]
+            }
+        };
+
+        let currentDayKey = 'overview';
+        let animationProgress = 1;
+        let animationFrameId = null;
+        let activeFocusedNodeIdx = null;
+        let currentMobileSubTab = 'list'; // 'list' | 'map'
+
+        function openSpotModal(spotIndex) {
+            const dayConfig = mapDayConfig[currentDayKey] || mapDayConfig.overview;
+            const nodeData = dayConfig.nodes[spotIndex] || dayConfig.nodes[0];
+
+            document.getElementById('modal-spot-title').textContent = nodeData.name;
+            document.getElementById('modal-spot-badge').textContent = nodeData.badge || '特別安排';
+            document.getElementById('modal-spot-desc').textContent = nodeData.desc || '暫無詳細說明。';
+            document.getElementById('modal-spot-duration').textContent = nodeData.duration || '停留時間 1小時';
+
+            document.getElementById('spot-modal').classList.remove('hidden');
+        }
+
+        function closeSpotModal() {
+            document.getElementById('spot-modal').classList.add('hidden');
+        }
+
+        function openModalFromMapPopup() {
+            if (activeFocusedNodeIdx !== null) {
+                openSpotModal(activeFocusedNodeIdx);
+            }
+        }
+
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const loader = document.getElementById('loading-screen');
+                const nav = document.getElementById('app-nav');
+                const content = document.getElementById('app-content');
+                const mToggle = document.getElementById('mobile-view-toggle');
+
+                loader.classList.add('transition-opacity', 'duration-500', 'opacity-0');
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                    nav.classList.remove('hidden');
+                    content.classList.remove('hidden');
+                    mToggle.classList.remove('hidden');
+                    initMapCanvas();
+                    checkMobileLayout();
+                }, 500);
+            }, 800);
+        });
+
+        // M版專屬切換分頁 (行程資訊 / 3D地圖)
+        function setMobileSubTab(tab) {
+            currentMobileSubTab = tab;
+            const leftPanel = document.getElementById('left-panel');
+            const rightMapPanel = document.getElementById('right-map-panel');
+            const btnList = document.getElementById('m-toggle-list');
+            const btnMap = document.getElementById('m-toggle-map');
+
+            if (window.innerWidth < 1024) {
+                if (tab === 'list') {
+                    leftPanel.classList.remove('hidden');
+                    rightMapPanel.classList.add('hidden');
+                    btnList.className = 'flex-1 py-1.5 text-center rounded-md bg-white text-gray-900 shadow-sm transition font-bold';
+                    btnMap.className = 'flex-1 py-1.5 text-center rounded-md text-gray-600 transition';
+                } else {
+                    leftPanel.classList.add('hidden');
+                    rightMapPanel.classList.remove('hidden');
+                    btnMap.className = 'flex-1 py-1.5 text-center rounded-md bg-white text-gray-900 shadow-sm transition font-bold';
+                    btnList.className = 'flex-1 py-1.5 text-center rounded-md text-gray-600 transition';
+                    setTimeout(resizeCanvas, 50);
+                }
+            }
+        }
+
+        function checkMobileLayout() {
+            const leftPanel = document.getElementById('left-panel');
+            const rightMapPanel = document.getElementById('right-map-panel');
+            
+            if (window.innerWidth >= 1024) {
+                leftPanel.classList.remove('hidden');
+                rightMapPanel.classList.remove('hidden');
+            } else {
+                setMobileSubTab(currentMobileSubTab);
+            }
+        }
+
+        function switchToMapViewAndFocus(nodeIdx) {
+            if (window.innerWidth < 1024) {
+                setMobileSubTab('map');
+            }
+            focusMapNode(nodeIdx);
+        }
+
+        function switchView(viewName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('tab-active'));
+
+            const mainWrapper = document.getElementById('main-layout-wrapper');
+            const noticeContainer = document.getElementById('view-notice-container');
+            const mToggle = document.getElementById('mobile-view-toggle');
+
+            if (viewName === 'notice') {
+                mainWrapper.classList.add('hidden');
+                noticeContainer.classList.remove('hidden');
+                mToggle.classList.add('hidden');
+                document.getElementById('nav-btn-notice').classList.add('tab-active');
+                return;
+            }
+
+            noticeContainer.classList.add('hidden');
+            mainWrapper.classList.remove('hidden');
+            mToggle.classList.remove('hidden');
+
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+
+            currentDayKey = mapDayConfig[viewName] ? viewName : 'overview';
+            activeFocusedNodeIdx = null;
+            hidePoiCard();
+
+            if (viewName === 'overview') {
+                document.getElementById('view-overview').classList.remove('hidden');
+                document.getElementById('nav-btn-overview').classList.add('tab-active');
+            } else if (viewName === 'day1') {
+                document.getElementById('view-day1').classList.remove('hidden');
+                document.getElementById('nav-btn-day1').classList.add('tab-active');
+            } else {
+                const genericView = document.getElementById('view-generic');
+                const genericTitle = document.getElementById('generic-title');
+                
+                let titleText = '行程詳細說明';
+                if (viewName.startsWith('day')) {
+                    const dayNum = viewName.replace('day', '');
+                    titleText = `DAY ${dayNum} 行程內容`;
+                }
+                
+                genericTitle.textContent = titleText;
+                genericView.classList.remove('hidden');
+
+                const btn = document.getElementById(`nav-btn-${viewName}`);
+                if (btn) btn.classList.add('tab-active');
+            }
+
+            checkMobileLayout();
+            setTimeout(resizeCanvas, 50);
+            triggerMapTransition();
+        }
+
+        function toggleNoticeAccordion(btnEl) {
+            const container = btnEl.previousElementSibling;
+            const icon = btnEl.querySelector('i');
+            
+            if (container.classList.contains('line-clamp-3')) {
+                container.classList.remove('line-clamp-3');
+                btnEl.querySelector('span').textContent = '收起資訊';
+                icon.classList.add('rotate-180');
+            } else {
+                container.classList.add('line-clamp-3');
+                btnEl.querySelector('span').textContent = '看完整資訊';
+                icon.classList.remove('rotate-180');
+            }
+        }
+
+        function toggleStaticModal() {
+            document.getElementById('static-modal').classList.toggle('hidden');
+        }
+
+        let canvas, ctx;
+
+        function initMapCanvas() {
+            canvas = document.getElementById('map-canvas');
+            if (!canvas) return;
+            ctx = canvas.getContext('2d');
+
+            canvas.addEventListener('click', handleMapClick);
+            window.addEventListener('resize', () => {
+                checkMobileLayout();
+                resizeCanvas();
+            });
+            resizeCanvas();
+        }
+
+        function handleMapClick(event) {
+            if (!canvas) return;
+            const rect = canvas.getBoundingClientRect();
+            const clickX = event.clientX - rect.left;
+            const clickY = event.clientY - rect.top;
+
+            const w = canvas.width;
+            const h = canvas.height;
+            const dayData = mapDayConfig[currentDayKey] || mapDayConfig.overview;
+            const currentNodes = dayData.nodes;
+
+            let clickedIdx = -1;
+
+            currentNodes.forEach((node, idx) => {
+                const nodeX = node.xPct * w;
+                const nodeY = node.yPct * h;
+                const dist = Math.hypot(clickX - nodeX, clickY - nodeY);
+                if (dist <= 28) {
+                    clickedIdx = idx;
+                }
+            });
+
+            if (clickedIdx !== -1) {
+                focusMapNode(clickedIdx);
+            } else {
+                hidePoiCard();
+                activeFocusedNodeIdx = null;
+                drawMapNodes();
+            }
+        }
+
+        function hidePoiCard() {
+            const card1 = document.getElementById('poi-card-1');
+            if (card1) {
+                card1.classList.add('hidden');
+            }
+        }
+
+        function resizeCanvas() {
+            if (!canvas) return;
+            const container = canvas.parentElement;
+            if (!container) return;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            drawMapNodes();
+        }
+
+        function triggerMapTransition() {
+            const config = mapDayConfig[currentDayKey] || mapDayConfig.overview;
+            const subText = document.getElementById('map-label-sub');
+            if (subText) {
+                subText.textContent = `顯示 ${config.label} POI與連線`;
+            }
+
+            animationProgress = 0;
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            
+            function animateStep() {
+                animationProgress += 0.08;
+                if (animationProgress >= 1) {
+                    animationProgress = 1;
+                    drawMapNodes();
+                } else {
+                    drawMapNodes();
+                    animationFrameId = requestAnimationFrame(animateStep);
+                }
+            }
+            animateStep();
+        }
+
+        function drawMapNodes() {
+            if (!ctx || !canvas) return;
+            const w = canvas.width;
+            const h = canvas.height;
+
+            ctx.clearRect(0, 0, w, h);
+
+            const dayData = mapDayConfig[currentDayKey] || mapDayConfig.overview;
+            const currentNodes = dayData.nodes;
+
+            const points = currentNodes.map((node) => ({
+                ...node,
+                x: node.xPct * w,
+                y: node.yPct * h
+            }));
+
+            // Grid lines
+            ctx.strokeStyle = 'rgba(203, 213, 225, 0.4)';
+            ctx.lineWidth = 1;
+            const gridSize = 35;
+            for (let x = 0; x < w; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, h);
+                ctx.stroke();
+            }
+            for (let y = 0; y < h; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(w, y);
+                ctx.stroke();
+            }
+
+            // Path Lines
+            if (points.length > 1) {
+                ctx.beginPath();
+                ctx.setLineDash([8, 6]);
+                ctx.strokeStyle = '#374151';
+                ctx.lineWidth = 2.5;
+
+                ctx.moveTo(points[0].x, points[0].y);
+                const limit = Math.floor((points.length - 1) * animationProgress) + 1;
+
+                for (let i = 1; i < points.length; i++) {
+                    if (i <= limit) {
+                        ctx.lineTo(points[i].x, points[i].y);
+                    }
+                }
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            // Node Circles
+            points.forEach((pt, idx) => {
+                const isFocused = (idx === activeFocusedNodeIdx);
+
+                if (isFocused) {
+                    ctx.beginPath();
+                    ctx.arc(pt.x, pt.y, 22, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(239, 68, 68, 0.3)';
+                    ctx.fill();
+                }
+
+                ctx.beginPath();
+                ctx.arc(pt.x, pt.y, 15, 0, Math.PI * 2);
+                ctx.fillStyle = isFocused ? '#ef4444' : '#374151';
+                ctx.fill();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 11px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(pt.label, pt.x, pt.y);
+            });
+
+            // POI Card positioning
+            const card1 = document.getElementById('poi-card-1');
+            const cardTitle = document.getElementById('poi-title');
+
+            if (activeFocusedNodeIdx !== null && points[activeFocusedNodeIdx]) {
+                const targetNode = points[activeFocusedNodeIdx];
+                if (card1) {
+                    let leftPos = targetNode.x + 18;
+                    let topPos = targetNode.y - 45;
+                    const cardWidth = window.innerWidth < 640 ? 180 : 210;
+
+                    if (leftPos + cardWidth > w) {
+                        leftPos = targetNode.x - (cardWidth + 15);
+                    }
+                    if (topPos < 10) {
+                        topPos = targetNode.y + 20;
+                    }
+
+                    card1.style.left = `${Math.max(10, leftPos)}px`;
+                    card1.style.top = `${Math.max(10, topPos)}px`;
+                    card1.classList.remove('hidden');
+                }
+                if (cardTitle) {
+                    cardTitle.textContent = targetNode.name;
+                }
+            } else if (card1) {
+                card1.classList.add('hidden');
+            }
+        }
+
+        function focusMapNode(nodeIdx) {
+            activeFocusedNodeIdx = nodeIdx;
+            drawMapNodes();
+
+            const card1 = document.getElementById('poi-card-1');
+            if (card1) {
+                card1.classList.remove('map-card-pulse');
+                void card1.offsetWidth;
+                card1.classList.add('map-card-pulse');
+            }
+
+            const cardElem = document.getElementById(`card-item-${nodeIdx}`);
+            if (cardElem && currentMobileSubTab === 'list') {
+                cardElem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                cardElem.classList.remove('spot-card-highlight');
+                void cardElem.offsetWidth;
+                cardElem.classList.add('spot-card-highlight');
+            }
+        }
+    </script>
+</body>
+</html>
