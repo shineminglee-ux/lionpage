@@ -127,7 +127,8 @@
     </nav>
 
     <!-- Mobile View Switcher Tab (M版專屬切換按鈕：文字列表 vs 3D地圖) -->
-    <div id="mobile-view-toggle" class="lg:hidden bg-gray-200 p-1 flex justify-center text-xs font-medium border-b border-gray-300 flex-shrink-0 hidden">
+    <!-- 依需求隱藏切換頁籤，改為地圖直接顯示於頁面上方 -->
+    <div id="mobile-view-toggle" class="lg:hidden bg-gray-200 p-1 justify-center text-xs font-medium border-b border-gray-300 flex-shrink-0 hidden">
         <button id="m-toggle-list" onclick="setMobileSubTab('list')" class="flex-1 py-1.5 text-center rounded-md bg-white text-gray-900 shadow-sm transition">
             <i class="fa-solid fa-list-ul mr-1"></i>行程資訊
         </button>
@@ -167,6 +168,11 @@
                     <h1 class="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 leading-snug">
                         九州旅遊|人氣由布院之森.海之中道水族館.鶴見岳空中纜車.和牛長腳蟹吃到飽.保住雙溫泉五日
                     </h1>
+
+                    <!-- 手機版專屬地圖容器 (行程總覽) -->
+                    <div id="overview-mobile-map-container" class="lg:hidden w-full h-[260px] bg-gray-200 rounded-lg overflow-hidden border border-gray-300 shadow-sm relative my-2">
+                        <!-- 動態畫布將會被移動繪製在此 -->
+                    </div>
 
                     <div class="bg-white rounded-lg p-3.5 sm:p-4 border border-gray-200 shadow-sm text-xs text-gray-600 space-y-3 sm:space-y-4">
                         <div class="grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 items-center">
@@ -283,6 +289,10 @@
                         <h2 class="text-base sm:text-lg md:text-xl font-bold text-gray-900 leading-snug">
                             台北 ➔ 福岡空港➔福岡〜自由夜訪天神中洲不夜城體驗日本屋台文化
                         </h2>
+                    </div>
+
+                    <!-- 手機版專屬地圖容器 (DAY 1) -->
+                    <div id="day1-mobile-map-container" class="lg:hidden w-full h-[260px] bg-gray-200 rounded-lg overflow-hidden border border-gray-300 shadow-sm relative my-2 mobile-map-slot">
                     </div>
 
                     <div class="text-xs text-gray-600 leading-relaxed bg-white border border-gray-200 rounded-lg p-3 sm:p-3.5 space-y-1.5">
@@ -448,9 +458,16 @@
 
                 <!-- VIEW: DAY 2-5 GENERIC -->
                 <div id="view-generic" class="view-section space-y-4 hidden">
+                    <div>
+                        <h2 id="generic-title" class="text-base sm:text-lg md:text-xl font-bold text-gray-900 leading-snug">DAY 行程內容</h2>
+                    </div>
+
+                    <!-- 手機版專屬地圖容器 (DAY 2~5) -->
+                    <div id="generic-mobile-map-container" class="lg:hidden w-full h-[260px] bg-gray-200 rounded-lg overflow-hidden border border-gray-300 shadow-sm relative my-2 mobile-map-slot">
+                    </div>
+
                     <div class="bg-white p-6 rounded-lg border border-gray-200 text-center space-y-3">
                         <i class="fa-solid fa-calendar-day text-4xl text-gray-300"></i>
-                        <h2 id="generic-title" class="text-lg font-bold text-gray-800">DAY 行程內容</h2>
                         <p class="text-xs text-gray-500">這裡呈現該天數的景點、餐食與住宿詳細資訊。</p>
                     </div>
                 </div>
@@ -902,6 +919,13 @@
             const btnMap = document.getElementById('m-toggle-map');
 
             if (window.innerWidth < 1024) {
+                // 如果目前在行程總覽，地圖已經嵌入在左側內容上方，兩者都需顯示
+                if (currentDayKey === 'overview') {
+                    leftPanel.classList.remove('hidden');
+                    rightMapPanel.classList.add('hidden'); // 使用嵌入的地圖容器
+                    return;
+                }
+
                 if (tab === 'list') {
                     leftPanel.classList.remove('hidden');
                     rightMapPanel.classList.add('hidden');
@@ -920,20 +944,54 @@
         function checkMobileLayout() {
             const leftPanel = document.getElementById('left-panel');
             const rightMapPanel = document.getElementById('right-map-panel');
+            const mToggle = document.getElementById('mobile-view-toggle');
+            const canvas = document.getElementById('map-canvas');
             
             if (window.innerWidth >= 1024) {
                 leftPanel.classList.remove('hidden');
                 rightMapPanel.classList.remove('hidden');
+                if (mToggle) mToggle.classList.add('hidden');
+                // 電腦版將 Canvas 放回右側面板
+                if (canvas && canvas.parentElement !== rightMapPanel) {
+                    rightMapPanel.appendChild(canvas);
+                }
             } else {
-                setMobileSubTab(currentMobileSubTab);
+                if (currentDayKey === 'notice') {
+                    leftPanel.classList.remove('hidden');
+                    rightMapPanel.classList.add('hidden');
+                    if (mToggle) mToggle.classList.add('hidden');
+                } else {
+                    // 行程總覽與 DAY 1~5：皆隱藏手機版切換按鈕，直接將地圖放置在當前頁面的上方地圖容器中
+                    if (mToggle) mToggle.classList.add('hidden');
+                    leftPanel.classList.remove('hidden');
+                    rightMapPanel.classList.add('hidden');
+
+                    let targetContainer = null;
+                    if (currentDayKey === 'overview') {
+                        targetContainer = document.getElementById('overview-mobile-map-container');
+                    } else if (currentDayKey === 'day1') {
+                        targetContainer = document.getElementById('day1-mobile-map-container');
+                    } else {
+                        targetContainer = document.getElementById('generic-mobile-map-container');
+                    }
+
+                    if (targetContainer && canvas && canvas.parentElement !== targetContainer) {
+                        targetContainer.appendChild(canvas);
+                    }
+                }
             }
+            setTimeout(resizeCanvas, 50);
         }
 
         function switchToMapViewAndFocus(nodeIdx) {
-            if (window.innerWidth < 1024) {
-                setMobileSubTab('map');
-            }
             focusMapNode(nodeIdx);
+            // 手機版點擊「看地圖」時，平滑滾動至上方的地圖位置
+            if (window.innerWidth < 1024) {
+                const canvas = document.getElementById('map-canvas');
+                if (canvas) {
+                    canvas.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
         }
 
         function switchView(viewName) {
@@ -953,7 +1011,6 @@
 
             noticeContainer.classList.add('hidden');
             mainWrapper.classList.remove('hidden');
-            mToggle.classList.remove('hidden');
 
             document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
 
@@ -985,7 +1042,6 @@
             }
 
             checkMobileLayout();
-            setTimeout(resizeCanvas, 50);
             triggerMapTransition();
         }
 
